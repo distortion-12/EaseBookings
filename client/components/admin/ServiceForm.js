@@ -1,11 +1,11 @@
+/*
+ * This component renders a form for creating or editing service details.
+ * It handles input validation and submission for service name, description, duration, price, and buffer time.
+ */
+
 import { useState, useEffect } from 'react';
 
-/**
- * A form for creating or editing a service.
- * @param {object} initialData - The service data to edit, or null to create.
- * @param {function} onSubmit - The function to call when the form is submitted.
- * @param {boolean} loading - Whether the form is currently submitting.
- */
+// Form component for service management.
 export default function ServiceForm({ initialData, onSubmit, loading }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -15,7 +15,7 @@ export default function ServiceForm({ initialData, onSubmit, loading }) {
     bufferTime: 0,
   });
 
-  // Load initial data when it's provided (for editing)
+  // Populate form with initial data if editing, otherwise reset to defaults.
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -26,11 +26,11 @@ export default function ServiceForm({ initialData, onSubmit, loading }) {
         bufferTime: initialData.bufferTime || 0,
       });
     } else {
-      // Reset for creating a new service
       setFormData({ name: '', description: '', duration: 30, price: 0, bufferTime: 0 });
     }
   }, [initialData]);
 
+  // Handle input changes, converting numeric fields appropriately.
   const handleChange = (e) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
@@ -122,11 +122,12 @@ export default function ServiceForm({ initialData, onSubmit, loading }) {
           />
         </div>
       </div>
+      {/* Action Buttons */}
       <div className="pt-4 flex justify-end">
         <button
           type="submit"
           disabled={loading}
-          className="w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-400"
+          className="w-full justify-center rounded bg-black py-3 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 disabled:bg-gray-400"
         >
           {loading ? 'Saving...' : 'Save Service'}
         </button>

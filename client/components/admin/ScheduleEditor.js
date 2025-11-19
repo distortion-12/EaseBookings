@@ -1,3 +1,8 @@
+/*
+ * This component allows admins to edit the weekly working schedule for a staff member.
+ * It provides toggles for working days and inputs for start and end times.
+ */
+
 import { useState, useEffect } from 'react';
 import { Switch } from '@headlessui/react';
 
@@ -7,19 +12,16 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-/**
- * A sub-component for managing the 7-day schedule within the StaffForm.
- * @param {object} initialSchedule - The initial schedule object from the staff member.
- * @param {function} onChange - Function to call when the schedule is updated.
- */
+// Component for editing the weekly schedule.
 export default function ScheduleEditor({ initialSchedule, onChange }) {
   const [schedule, setSchedule] = useState(initialSchedule);
 
-  // Update parent form whenever local schedule changes
+  // Propagate changes to the parent component whenever the local schedule state updates.
   useEffect(() => {
     onChange(schedule);
   }, [schedule, onChange]);
 
+  // Updates a specific field (e.g., isWorking, startTime) for a given day.
   const handleDayChange = (day, field, value) => {
     setSchedule(prev => ({
       ...prev,
@@ -30,8 +32,9 @@ export default function ScheduleEditor({ initialSchedule, onChange }) {
     }));
   };
 
+  // Validates and updates the time input.
   const handleTimeChange = (day, field, value) => {
-    // Basic time validation (e.g., "09:00")
+    // Ensure the time format is valid (HH:MM) or empty before updating.
     if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value) || value === '') {
       handleDayChange(day, field, value);
     }
@@ -62,13 +65,14 @@ export default function ScheduleEditor({ initialSchedule, onChange }) {
             </Switch>
           </div>
           
+          {/* Render time inputs only if the staff member is working on this day */}
           {schedule[day].isWorking && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-500">Start Time</label>
                 <input
                   type="time"
-                  step="900" // 15-minute steps
+                  step="900" // 15-minute increments
                   value={schedule[day].startTime}
                   onChange={(e) => handleDayChange(day, 'startTime', e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
@@ -84,7 +88,6 @@ export default function ScheduleEditor({ initialSchedule, onChange }) {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"
                 />
               </div>
-              {/* Note: We'd add break management here in a future version */}
             </div>
           )}
         </div>

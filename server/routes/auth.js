@@ -1,21 +1,23 @@
+/*
+ * This file defines the API routes for Business (Provider) authentication.
+ * It handles registration, login, OTP verification, and fetching the current user.
+ */
+
 const express = require('express');
 const router = express.Router();
-const { register, login, getMe } = require('../controllers/authController');
+const { register, login, getMe, verifyOtp } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
-// @route   POST /api/auth/register
-// @desc    Register a new business owner
-// @access  Public
+// Route to register a new business account.
 router.post('/register', register);
 
-// @route   POST /api/auth/login
-// @desc    Login a business owner & get token
-// @access  Public
+// Route to verify the email OTP and activate the account.
+router.post('/verify-otp', verifyOtp);
+
+// Route to authenticate a business user and return a JWT token.
 router.post('/login', login);
 
-// @route   GET /api/auth/me
-// @desc    Get the logged-in business owner's data
-// @access  Private (Needs token)
+// Route to retrieve the profile of the currently logged-in business user. Requires authentication.
 router.get('/me', protect, getMe);
 
 module.exports = router;

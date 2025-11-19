@@ -1,10 +1,15 @@
+/*
+ * This file contains the controller functions for managing services.
+ * It handles creating, retrieving, updating, and deleting services for a business.
+ */
+
 const Service = require('../models/Service');
 const Business = require('../models/Business');
 
-// @desc    Get all services for the logged-in business
+// Retrieves all services associated with the currently authenticated business.
 exports.getServices = async (req, res) => {
   try {
-    // req.business.id comes from the 'protect' middleware
+    // Fetch services where the business ID matches the authenticated user's ID.
     const services = await Service.find({ business: req.business.id });
     res.status(200).json({ success: true, count: services.length, data: services });
   } catch (error) {
@@ -12,7 +17,7 @@ exports.getServices = async (req, res) => {
   }
 };
 
-// @desc    Get a single service by ID
+// Retrieves a specific service by its ID, ensuring the user is authorized to view it.
 exports.getServiceById = async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
@@ -21,7 +26,7 @@ exports.getServiceById = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Service not found' });
     }
 
-    // Check ownership
+    // Verify that the service belongs to the authenticated business.
     if (service.business.toString() !== req.business.id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
@@ -32,10 +37,10 @@ exports.getServiceById = async (req, res) => {
   }
 };
 
-// @desc    Create a new service
+// Creates a new service for the authenticated business.
 exports.createService = async (req, res) => {
   try {
-    // Add the business ID from the logged-in user to the request body
+    // Associate the new service with the authenticated business ID.
     req.body.business = req.business.id;
 
     const service = await Service.create(req.body);
@@ -45,7 +50,7 @@ exports.createService = async (req, res) => {
   }
 };
 
-// @desc    Update a service
+// Updates an existing service, ensuring the user is authorized to make changes.
 exports.updateService = async (req, res) => {
   try {
     let service = await Service.findById(req.params.id);
@@ -54,7 +59,7 @@ exports.updateService = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Service not found' });
     }
 
-    // Check ownership
+    // Verify that the service belongs to the authenticated business.
     if (service.business.toString() !== req.business.id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
@@ -70,7 +75,7 @@ exports.updateService = async (req, res) => {
   }
 };
 
-// @desc    Delete a service
+// Deletes a service, ensuring the user is authorized to perform the deletion.
 exports.deleteService = async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
@@ -79,12 +84,13 @@ exports.deleteService = async (req, res) => {
       return res.status(44).json({ success: false, error: 'Service not found' });
     }
 
-    // Check ownership
+    // Verify that the service belongs to the authenticated business.
     if (service.business.toString() !== req.business.id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
 
-    await service.deleteOne(); // use deleteOne() Mongoose document method
+    // Remove the service from the database.
+    await service.deleteOne();
 
     res.status(200).json({ success: true, data: {} });
   } catch (error) {

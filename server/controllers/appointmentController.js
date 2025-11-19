@@ -1,22 +1,26 @@
+/*
+ * This file contains the controller functions for managing appointments.
+ * It handles availability checks, booking creation (with concurrency control), and retrieving appointment lists.
+ */
+
 const Appointment = require('../models/Appointment');
 const Business = require('../models/Business');
 const Service = require('../models/Service');
 const Staff = require('../models/Staff');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { sendEmail, getConfirmationHtml } = require('../utils/email');
 const {
   generateTimeSlots,
   isSlotBooked,
-  convertLocalToUTC,
 } = require('../utils/timeHelper');
-const { parse, startOfDay, endOfDay, format } = require('date-fns');
+const { parse, format } = require('date-fns');
 const { zonedTimeToUtc } = require('date-fns-tz');
 
-// === PUBLIC ROUTES ===
-
-// @desc    Get available slots for a service/staff/date
+// Calculates and returns available time slots for a specific service, staff member, and date.
 exports.getAvailability = async (req, res) => {
   try {
     const { businessSlug } = req.params;
-    const { date, serviceId, staffId } = req.query; // date is "yyyy-MM-dd"
+    const { date, serviceId, staffId } = req.query;
 
     if (!date || !serviceId || !staffId) {
       return res
@@ -24,7 +28,7 @@ exports.getAvailability = async (req, res) => {
         .json({ success: false, error: 'Missing required query parameters' });
     }
 
-    // 1. Find business and service
+    // Retrieve business and service details to validate the request.
     const business = await Business.findOne({ bookingPageSlug: businessSlug });
     if (!business) {
       return res.status(404).json({ success: false, error: 'Business not found' });
@@ -35,7 +39,7 @@ exports.getAvailability = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Service not found' });
     }
 
-    // 2. Find staff member and their schedule for the day
+    // Retrieve staff details and check their working schedule for the requested day.
     const staff = await Staff.findById(staffId);
     if (!staff) {
       return res.status(404).json({ success: false, error: 'Staff not found' });
@@ -44,14 +48,14 @@ exports.getAvailability = async (req, res) => {
     const dayOfWeek = format(
       parse(date, 'yyyy-MM-dd', new Date()),
       'eeee'
-    ).toLowerCase(); // e.g., "monday"
+    ).toLowerCase();
     const daySchedule = staff.schedule[dayOfWeek];
 
     if (!daySchedule.isWorking) {
-      return res.status(200).json({ success: true, data: [] }); // Not working this day
+      return res.status(200).json({ success: true, data: [] });
     }
 
-    // 3. Get all existing appointments for this staff on this day
+    // Fetch existing confirmed appointments to determine conflicts.
     const timeZone = business.config.timezone;
     const startOfTargetDay = zonedTimeToUtc(`${date}T00:00:00`, timeZone);
     const endOfTargetDay = zonedTimeToUtc(`${date}T23:59:59`, timeZone);
@@ -59,11 +63,10 @@ exports.getAvailability = async (req, res) => {
     const existingAppointments = await Appointment.find({
       staff: staffId,
       startTime: { $gte: startOfTargetDay, $lte: endOfTargetDay },
-      status: 'Confirmed', // Only check against confirmed appointments
+      status: 'Confirmed',
     });
 
-    // 4. Generate all potential slots
-    // We can use a 15-minute interval for booking precision
+    // Generate all possible time slots based on the staff's working hours.
     const slotInterval = 15;
     const allSlots = generateTimeSlots(
       startOfTargetDay,
@@ -73,7 +76,7 @@ exports.getAvailability = async (req, res) => {
       timeZone
     );
 
-    // 5. Filter for available slots
+    // Filter out slots that are already booked or conflict with breaks.
     const availableSlots = allSlots.filter((slot) => {
       return !isSlotBooked(
         slot,
@@ -86,9 +89,8 @@ exports.getAvailability = async (req, res) => {
       );
     });
 
-    // Format slots for the frontend (e.g., "HH:mm")
+    // Return the available slots as ISO strings.
     const formattedSlots = availableSlots.map((slot) => {
-      // We must return the full UTC timestamp so the frontend can post it back
       return slot.toISOString();
     });
 
@@ -98,17 +100,17 @@ exports.getAvailability = async (req, res) => {
   }
 };
 
-// @desc    Create a new appointment
+// Creates a new appointment, ensuring no double-booking occurs via database transactions.
 exports.createAppointment = async (req, res) => {
   const { businessSlug } = req.params;
-  const { serviceId, staffId, startTime, client } = req.body;
+  const { serviceId, staffId, startTime, client, paymentIntentId } = req.body;
 
-  // Use a database session and transaction for concurrency control
+  // Start a database transaction to ensure data integrity during the booking process.
   const session = await Appointment.startSession();
   session.startTransaction();
 
   try {
-    // 1. Get Business and Service details
+    // Validate business and service existence within the transaction session.
     const business = await Business.findOne({ bookingPageSlug: businessSlug }).session(session);
     if (!business) {
       return res.status(404).json({ success: false, error: 'Business not found' });
@@ -119,31 +121,40 @@ exports.createAppointment = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Service not found' });
     }
 
-    // 2. Calculate end time
+    // Calculate the appointment end time based on service duration.
     const start = parse(startTime, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", new Date());
-    const end = new Date(start.getTime() + service.duration * 60000); // duration in ms
+    const end = new Date(start.getTime() + service.duration * 60000);
 
-    // 3. CRITICAL: Concurrency Check
-    // Check if any *other* confirmed appointment exists in this slot
+    // Check for any conflicting appointments that might have been confirmed simultaneously.
     const existing = await Appointment.findOne({
       staff: staffId,
       status: 'Confirmed',
       $or: [
-        { startTime: { $lt: end, $gte: start } }, // Starts within the slot
-        { endTime: { $gt: start, $lte: end } }, // Ends within the slot
+        { startTime: { $lt: end, $gte: start } },
+        { endTime: { $gt: start, $lte: end } },
       ],
     }).session(session);
 
     if (existing) {
-      // This slot was *just* booked. Abort.
       await session.abortTransaction();
       session.endSession();
       return res
-        .status(409) // 409 Conflict
+        .status(409)
         .json({ success: false, error: 'This time slot just became unavailable.' });
     }
 
-    // 4. Create the new appointment
+    // Verify the payment status with Stripe if a payment intent ID is provided.
+    let paymentStatus = 'Pending';
+    if (paymentIntentId) {
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (paymentIntent.status === 'succeeded') {
+        paymentStatus = 'Paid';
+      } else {
+        throw new Error('Payment not successful');
+      }
+    }
+
+    // Create and save the new appointment record.
     const appointment = new Appointment({
       business: business._id,
       service: serviceId,
@@ -156,15 +167,31 @@ exports.createAppointment = async (req, res) => {
         phone: client.phone,
       },
       status: 'Confirmed',
+      paymentIntentId: paymentIntentId,
+      paymentStatus: paymentStatus,
     });
     
     await appointment.save({ session });
 
-    // 5. Commit the transaction
+    // Commit the transaction to finalize the booking.
     await session.commitTransaction();
     session.endSession();
 
-    // 6. TODO: Trigger email notifications here (Phase 2)
+    // Send a confirmation email to the client.
+    try {
+        const populatedAppointment = await Appointment.findById(appointment._id)
+            .populate('service')
+            .populate('staff');
+        
+        const emailHtml = getConfirmationHtml(populatedAppointment, business);
+        await sendEmail(
+            client.email, 
+            `Booking Confirmed: ${service.name} at ${business.businessName}`, 
+            emailHtml
+        );
+    } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+    }
 
     res.status(201).json({ success: true, data: appointment });
   } catch (error) {
@@ -174,12 +201,10 @@ exports.createAppointment = async (req, res) => {
   }
 };
 
-// === ADMIN ROUTE ===
-
-// @desc    Get all appointments for the logged-in admin
+// Retrieves a list of appointments for the logged-in business admin, filtered by date range.
 exports.getBusinessAppointments = async (req, res) => {
   try {
-    const { start, end } = req.query; // ISO date strings
+    const { start, end } = req.query;
 
     const appointments = await Appointment.find({
       business: req.business.id,

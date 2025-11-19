@@ -1,187 +1,256 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+/*
+ * This file contains the Authentication Context and Provider.
+ * It manages the global authentication state for both business providers (admins) and clients (customers),
+ * including login, registration, logout, and token persistence.
+ */
+
+import { createContext, useState, useEffect, useContext } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-import jwtDecode from 'jwt-decode'; // <-- THIS IS THE FIX (Removed the curly braces {})
 import toast from 'react-hot-toast';
-
-axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const AuthContext = createContext();
 
+// Base URL for the backend API
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+// Custom hook to access the authentication context.
+export const useAuth = () => useContext(AuthContext);
+
+// AuthProvider component that wraps the application to provide authentication state.
 export const AuthProvider = ({ children }) => {
-  // ADMIN AUTH STATE
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // CLIENT AUTH STATE
-  const [clientUser, setClientUser] = useState(null);
-  const [clientLoading, setClientLoading] = useState(true);
-
   const router = useRouter();
 
-  useEffect(() => {
-    checkAdminToken();
-    checkClientToken();
-  }, []);
+  // State for Provider (Business/Admin) authentication.
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
 
-  // --- HEADER HELPER ---
-  const setAuthHeader = (token) => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
-    }
-  };
+  // State for Client (Customer/Public) authentication.
+  const [clientUser, setClientUser] = useState(null);
+  const [clientLoading, setClientLoading] = useState(true);
+  const [clientToken, setClientToken] = useState(null);
 
-  // --- ADMIN AUTH FUNCTIONS ---
-  const checkAdminToken = async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decoded = jwtDecode(token); // This line will now work
-        if (decoded.exp * 1000 < Date.now()) {
-          adminLogout();
-        } else {
-          setAuthHeader(token);
-          await fetchAdminUser();
-        }
-      } catch (error) {
-        adminLogout();
+  // ===============================================
+  //            PROVIDER (ADMIN) LOGIC
+  // ===============================================
+
+  // Fetches the authenticated provider's profile data using the stored token.
+  const fetchProviderData = async (jwtToken) => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      };
+      const { data } = await axios.get(`${API_URL}/auth/me`, config);
+      
+      if (data.success) {
+        setUser(data.data);
+      } else {
+        localStorage.removeItem('providerToken');
+        setToken(null);
+        setUser(null);
       }
-    }
-    setLoading(false);
-  };
-  
-  const fetchAdminUser = async () => {
-    try {
-      const res = await axios.get('/api/auth/me');
-      setUser(res.data.data);
     } catch (error) {
-      adminLogout();
+      localStorage.removeItem('providerToken');
+      setToken(null);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const adminRegister = async (ownerName, businessName, email, password) => {
+  // Handles provider login, stores the token, and fetches user data.
+  const login = async (email, password) => {
     try {
-      const res = await axios.post('/api/auth/register', { ownerName, businessName, email, password });
-      const { token } = res.data;
-      localStorage.setItem('token', token);
-      setAuthHeader(token);
-      await fetchAdminUser();
-      toast.success('Account created successfully!');
-      router.push('/admin/dashboard');
+      const { data } = await axios.post(`${API_URL}/auth/login`, { email, password });
+      
+      if (data.success) {
+        localStorage.setItem('providerToken', data.token);
+        setToken(data.token);
+        toast.success('Provider login successful!');
+        await fetchProviderData(data.token); // Fetch user data immediately
+        return true;
+      } else {
+        toast.error(data.error || 'Login failed.');
+        return false;
+      }
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Registration failed');
+      toast.error(error.response?.data?.error || 'An error occurred during login.');
+      return false;
     }
   };
 
-  const adminLogin = async (email, password) => {
+  // Initiates provider registration and prompts for OTP verification.
+  const register = async (ownerName, businessName, email, password, extras = {}) => {
     try {
-      const res = await axios.post('/api/auth/login', { email, password });
-      const { token } = res.data;
-      localStorage.setItem('token', token);
-      setAuthHeader(token);
-      await fetchAdminUser();
-      toast.success('Logged in successfully!');
-      router.push('/admin/dashboard');
+      const payload = { ownerName, businessName, email, password, ...extras };
+      const { data } = await axios.post(`${API_URL}/auth/register`, payload);
+
+      if (data.success) {
+        // Don't login yet, just return success to trigger OTP step
+        toast.success('Registration initiated! Please check your email for OTP.');
+        return true;
+      } else {
+        toast.error(data.error || 'Registration failed.');
+        return false;
+      }
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Login failed');
+      toast.error(error.response?.data?.error || 'An error occurred during registration.');
+      return false;
     }
   };
 
-  const adminLogout = () => {
-    localStorage.removeItem('token');
-    setAuthHeader(null);
+  // Verifies the OTP for provider registration and completes the login process.
+  const verifyOtp = async (email, otp) => {
+    try {
+      const { data } = await axios.post(`${API_URL}/auth/verify-otp`, { email, otp });
+
+      if (data.success) {
+        localStorage.setItem('providerToken', data.token);
+        setToken(data.token);
+        toast.success('Account verified! Redirecting to dashboard.');
+        await fetchProviderData(data.token);
+        return true;
+      } else {
+        toast.error(data.error || 'Verification failed.');
+        return false;
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'An error occurred during verification.');
+      return false;
+    }
+  };
+
+  // Logs out the provider, clears state, and redirects to the login page.
+  const logout = () => {
+    localStorage.removeItem('providerToken');
+    setToken(null);
     setUser(null);
     router.push('/login');
+    toast('Logged out successfully.', { icon: '👋' });
   };
 
-  // --- CLIENT AUTH FUNCTIONS ---
-  const checkClientToken = async () => {
-    const clientToken = localStorage.getItem('clientToken');
-    if (clientToken) {
-      try {
-        const decoded = jwtDecode(clientToken); // This line will now work
-        if (decoded.exp * 1000 < Date.now()) {
-          clientLogout();
-        } else {
-          setClientUser({ id: decoded.id });
-        }
-      } catch (error) {
-        clientLogout();
-      }
-    }
+
+  // ===============================================
+  //            CLIENT (CUSTOMER) LOGIC
+  // ===============================================
+
+  // Fetches the authenticated client's profile data using the stored token.
+  const fetchClientData = async (jwtToken) => {
+    // NOTE: This is a placeholder. A real implementation would hit a secure API endpoint.
+    // For now, we mock success and set clientUser.
+    setClientUser({ 
+        name: 'Guest User', 
+        email: 'guest@example.com' 
+    });
     setClientLoading(false);
   };
-
-  const clientRegister = async (name, email, password, phone) => {
-    try {
-      const res = await axios.post('/api/client-auth/register', { name, email, password, phone });
-      const { token } = res.data;
-      localStorage.setItem('clientToken', token);
-      const decoded = jwtDecode(token); // This line will now work
-      setClientUser({ id: decoded.id });
-      toast.success('Account created successfully!');
-      return true;
-    } catch (error) {
-      console.error('--- REGISTRATION FAILED ---');
-      console.log('Error object:', error);
-      if (error.response) {
-        console.log('Error response data:', error.response.data);
-        console.log('Error response status:', error.response.status);
-      } else if (error.request) {
-        console.log('No response received. Server might be down or CORS error.');
-        console.log('Error request:', error.request);
-      } else {
-        console.log('Error message:', error.message);
-      }
-      toast.error(error.response?.data?.error || 'Registration failed');
-      return false;
-    }
-  };
-
+  
+  // Handles client login, stores the token, and fetches client data.
   const clientLogin = async (email, password) => {
     try {
-      const res = await axios.post('/api/client-auth/login', { email, password });
-      const { token } = res.data;
-      localStorage.setItem('clientToken', token);
-      const decoded = jwtDecode(token); // This line will now work
-      setClientUser({ id: decoded.id });
-      toast.success('Logged in successfully!');
-      return true;
-    } catch (error) {
-      console.error('--- LOGIN FAILED ---');
-      console.log('Error object:', error);
-      if (error.response) {
-        console.log('Error response data:', error.response.data);
-        console.log('Error response status:', error.response.status);
-      } else if (error.request) {
-        console.log('No response received. Server might be down or CORS error.');
-        console.log('Error request:', error.request);
+      const { data } = await axios.post(`${API_URL}/client-auth/login`, { email, password });
+      
+      if (data.success) {
+        localStorage.setItem('clientToken', data.token);
+        setClientToken(data.token);
+        toast.success('Client login successful!');
+        await fetchClientData(data.token);
+        return true;
       } else {
-        console.log('Error message:', error.message);
+        toast.error(data.error || 'Client login failed.');
+        return false;
       }
-      toast.error(error.response?.data?.error || 'Login failed');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'An error occurred during client login.');
+      return false;
+    }
+  };
+  
+  // Handles client registration, stores the token, and logs the user in.
+  const clientRegister = async (name, email, password, phone) => {
+    try {
+      const { data } = await axios.post(`${API_URL}/client-auth/register`, { name, email, password, phone });
+
+      if (data.success) {
+        localStorage.setItem('clientToken', data.token);
+        setClientToken(data.token);
+        toast.success('Client registration successful! Logged in.');
+        await fetchClientData(data.token);
+        return true;
+      } else {
+        toast.error(data.error || 'Client registration failed.');
+        return false;
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'An error occurred during client registration.');
       return false;
     }
   };
 
+  // Logs out the client and clears their authentication state.
   const clientLogout = () => {
     localStorage.removeItem('clientToken');
+    setClientToken(null);
     setClientUser(null);
-    toast.success('Logged out.');
+    toast('Client logged out.', { icon: '👋' });
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user, setUser, login: adminLogin, logout: adminLogout, register: adminRegister, loading,
-        clientUser, clientLoading, clientLogin, clientRegister, clientLogout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};
 
-export const useAuth = () => useContext(AuthContext);
+  // ===============================================
+  //                INITIALIZATION
+  // ===============================================
+
+  // Effect to initialize authentication state from local storage on component mount.
+  useEffect(() => {
+    const storedProviderToken = localStorage.getItem('providerToken');
+    const storedClientToken = localStorage.getItem('clientToken');
+
+    if (storedProviderToken) {
+      setToken(storedProviderToken);
+      fetchProviderData(storedProviderToken);
+    } else {
+      setLoading(false);
+    }
+
+    if (storedClientToken) {
+      setClientToken(storedClientToken);
+      fetchClientData(storedClientToken);
+    } else {
+      setClientLoading(false);
+    }
+    
+  }, []); 
+
+  const value = {
+    // Provider (Admin) State/Functions
+    user,
+    token,
+    loading,
+    login,
+    register,
+    verifyOtp,
+    logout,
+    
+    // Client (Customer) State/Functions
+    clientUser,
+    clientToken,
+    clientLoading,
+    clientLogin,
+    clientRegister,
+    clientLogout,
+  };
+
+  // Render a loading spinner while authentication state is being determined.
+  if (loading || clientLoading) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <div className='w-20 h-20 border-4 border-gray-300 border-t-4 border-t-blue-400 rounded-full animate-spin'></div>
+        </div>
+    );
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

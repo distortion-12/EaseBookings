@@ -1,8 +1,10 @@
+// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/pages/login.js
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Link from 'next/link'; // <--- IMPORT LINK
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -22,48 +24,48 @@ export default function LoginPage() {
   };
   
   if (loading || (!loading && user)) {
-      return <div>Loading...</div>; // Show loading or redirect
+      // Simple spinning loader mimicking Job Portal's Loading.jsx
+      return (
+        <div className="flex h-screen items-center justify-center">
+            <div className='w-20 h-20 border-4 border-gray-300 border-t-4 border-t-blue-400 rounded-full animate-spin'></div>
+        </div>
+      );
   }
 
   return (
     <>
       <Head>
-        <title>Admin Login - AppointEase</title>
+        <title>Provider Login - AppointEase</title>
       </Head>
       <div className="flex min-h-screen items-center justify-center bg-gray-100 py-12">
-        <div className="w-full max-w-md p-8 space-y-6 bg-white shadow-md rounded-lg">
+        {/* Styled like a form/modal wrapper */}
+        <div className="w-full max-w-md p-8 space-y-6 bg-white shadow-xl rounded-lg border border-gray-100">
           <h1 className="text-3xl font-bold text-center text-blue-600">
-            Admin Login
+            Provider Login
           </h1>
           <p className="text-center text-gray-600">
-            Log in to manage your business.
+            Welcome back! Please sign in to manage your business.
           </p>
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {/* ... (email and password inputs) ... */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email Address
-              </label>
+            {/* Email Input - Styled like Job Portal Recruiter Login */}
+            <div className='border border-gray-200 hover:border-blue-400 shadow-sm px-4 py-2 flex items-center gap-2 rounded-full'>
+              <label htmlFor="email" className="sr-only">Email Address</label>
+              <span className='text-gray-500'>✉️</span> {/* Mock email icon */}
               <input
                 id="email"
                 name="email"
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.targe.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full rounded-md border-0 p-0 shadow-none focus:ring-0 text-sm"
+                placeholder='Email Id'
               />
             </div>
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
+            {/* Password Input - Styled like Job Portal Recruiter Login */}
+            <div className='border border-gray-200 hover:border-blue-400 shadow-sm px-4 py-2 flex items-center gap-2 rounded-full'>
+              <label htmlFor="password" className="sr-only">Password</label>
+              <span className='text-gray-500'>🔒</span> {/* Mock lock icon */}
               <input
                 id="password"
                 name="password"
@@ -71,25 +73,27 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full rounded-md border-0 p-0 shadow-none focus:ring-0 text-sm"
+                placeholder='Password'
               />
             </div>
+            
+            {/* Login Button (Matching Job Portal CTA: bg-blue-600, rounded-full, py-2) */}
             <button
               type="submit"
-              className="w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="w-full justify-center rounded-full border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Log In
             </button>
           </form>
 
-          {/* --- ADD THIS LINK --- */}
+          {/* Sign Up Link */}
           <p className="text-sm text-center text-gray-600">
             Don't have an account?{' '}
             <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
               Sign Up
             </Link>
           </p>
-          {/* --- END OF LINK --- */}
 
         </div>
       </div>

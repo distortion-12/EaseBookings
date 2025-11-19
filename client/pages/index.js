@@ -1,39 +1,67 @@
-import React, { useState } from 'react';
+// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/pages/index.js
+
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import axios from 'axios';
 import PlatformNavbar from '@/components/layout/PlatformNavbar';
 import HeroSection from '@/components/home/HeroSection';
-import CategoryCard from '@/components/home/CategoryCard';
+import BusinessCard from '@/components/home/BusinessCard';
 import AuthModal from '@/components/common/AuthModal';
 import ClientAuthModal from '@/components/booking/ClientAuthModal';
 import toast from 'react-hot-toast';
-import Footer from '@/components/layout/Footer'; // <-- 1. IMPORT THE FOOTER
+import Footer from '@/components/layout/Footer';
+import ServiceListing from '@/components/ServiceListing'; // Import the new listing component
 
 export default function HomePage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isClientAuthModalOpen, setIsClientAuthModalOpen] = useState(false);
+  const [businesses, setBusinesses] = useState([]);
   const router = useRouter();
 
-  // --- STATE FOR SEARCH ---
-  const [city, setCity] = useState('');
-  const [area, setArea] = useState('');
+  // --- Search Filter State (Mimics Job Portal's searchFilter state) ---
+  const [searchFilter, setSearchFilter] = useState({
+    title: '', // For Service Name/Area search (Job Title)
+    location: '', // For City search (Job Location)
+  });
 
-  const handleCategoryClick = (categorySlug) => {
-    console.log(`Navigating to category: ${categorySlug}`);
-    router.push('/glowupsalon');
-  };
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+        const res = await axios.get(`${API_URL}/public/businesses`);
+        if (res.data.success) {
+          setBusinesses(res.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching businesses:', error);
+      }
+    };
+    fetchBusinesses();
+  }, []);
 
   const openClientAuthModal = () => {
     setIsAuthModalOpen(false);
     setIsClientAuthModalOpen(true);
   };
 
-  // --- SEARCH HANDLER ---
-  const handleSearch = (e) => {
+  // --- Search Handler: Updates the filter state and scrolls ---
+  const handleSearch = (e, area, city) => {
     e.preventDefault();
+    setSearchFilter({
+      title: area,
+      location: city,
+    });
     toast.success(`Searching for "${area}" in "${city}"...`);
-    console.log('Search params:', { city, area });
+    // Scroll to the listing section after search
+    document.getElementById('service-list')?.scrollIntoView({ behavior: 'smooth' });
   };
+  
+  // Filter businesses based on location search
+  const filteredBusinesses = businesses.filter(business => {
+      if (!searchFilter.location) return true;
+      return (business.address?.city || '').toLowerCase().includes(searchFilter.location.toLowerCase());
+  });
 
   return (
     <>
@@ -49,45 +77,33 @@ export default function HomePage() {
         <div className="flex-grow">
           <PlatformNavbar onLoginClick={() => setIsAuthModalOpen(true)} />
 
+          {/* Hero Section - Pass search handler and values */}
           <HeroSection
-            city={city}
-            setCity={setCity}
-            area={area}
-            setArea={setArea}
+            city={searchFilter.location}
+            setCity={(value) => setSearchFilter(prev => ({...prev, location: value}))}
+            area={searchFilter.title}
+            setArea={(value) => setSearchFilter(prev => ({...prev, title: value}))}
             onSearch={handleSearch}
           />
 
-          {/* Categories Section */}
-          <main className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">
-              Popular Categories
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <CategoryCard
-                name="Salons"
-                description="Hair, nails, and beauty."
-                imageUrl="https://placehold.co/400x300/60a5fa/ffffff?text=Salons"
-                onClick={() => handleCategoryClick('salons')}
-              />
-              <CategoryCard
-                name="Clinics"
-                description="Health and wellness."
-                imageUrl="https://placehold.co/400x300/34d399/ffffff?text=Clinics"
-                onClick={() => handleCategoryClick('clinics')}
-              />
-              <CategoryCard
-                name="Consultants"
-                description="Business and legal advice."
-                imageUrl="https://placehold.co/400x300/fbbf24/ffffff?text=Consultants"
-                onClick={() => handleCategoryClick('consultants')}
-              />
-              <CategoryCard
-                name="Tutors"
-                description="Academic and music lessons."
-                imageUrl="https://placehold.co/400x300/f87171/ffffff?text=Tutors"
-                onClick={() => handleCategoryClick('tutors')}
-              />
-            </div>
+          <main className="container 2xl:px-20 mx-auto px-4 py-8">
+            
+            {/* Featured Businesses Section */}
+            {filteredBusinesses.length > 0 && (
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800">
+                    {searchFilter.location ? `Businesses in ${searchFilter.location}` : 'New Businesses'}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {filteredBusinesses.slice(0, 4).map((business) => (
+                    <BusinessCard key={business._id} business={business} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Service Listing Section - Pass the filter state */}
+            <ServiceListing searchFilter={searchFilter} />
           </main>
         </div>
 
@@ -102,7 +118,7 @@ export default function HomePage() {
           onClose={() => setIsClientAuthModalOpen(false)}
         />
 
-        <Footer /> {/* <-- 2. ADD THE FOOTER HERE */}
+        <Footer />
       </div>
     </>
   );

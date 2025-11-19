@@ -1,28 +1,19 @@
+/*
+ * This file defines the Mongoose schema for Staff members.
+ * It stores details about employees, their assigned services, and their working schedule.
+ */
+
 const mongoose = require('mongoose');
 
-const BreakSchema = new mongoose.Schema({
-  startTime: { type: String, required: true }, // "HH:mm" format
-  endTime: { type: String, required: true },
-});
-
-const ScheduleSchema = new mongoose.Schema({
-  isWorking: { type: Boolean, default: false },
-  startTime: { type: String, default: '09:00' }, // "HH:mm" format
-  endTime: { type: String, default: '17:00' }, // "HH:mm" format
-  breaks: [BreakSchema],
-});
-
+// This schema represents the structure of a staff member document in the database.
 const StaffSchema = new mongoose.Schema({
-  business: {
-    type: mongoose.Schema.ObjectId,
-    ref: 'Business',
-    required: true,
-  },
+  // The full name of the staff member.
   name: {
     type: String,
-    required: [true, 'Please add a staff member name'],
+    required: [true, 'Please add a staff name'],
     trim: true,
   },
+  // Contact email for the staff member.
   email: {
     type: String,
     match: [
@@ -30,25 +21,25 @@ const StaffSchema = new mongoose.Schema({
       'Please add a valid email',
     ],
   },
-  phone: {
-    type: String,
+  // Contact phone number.
+  phone: String,
+  // References the Business that employs this staff member.
+  business: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'Business',
+    required: true,
   },
-  // Services this staff member can perform
+  // List of Services this staff member is qualified to perform.
   assignedServices: [
     {
       type: mongoose.Schema.ObjectId,
       ref: 'Service',
     },
   ],
-  // Weekly schedule for this staff member
+  // Defines the weekly working hours and availability for this staff member.
   schedule: {
-    monday: { type: ScheduleSchema, default: () => ({ isWorking: true }) },
-    tuesday: { type: ScheduleSchema, default: () => ({ isWorking: true }) },
-    wednesday: { type: ScheduleSchema, default: () => ({ isWorking: true }) },
-    thursday: { type: ScheduleSchema, default: () => ({ isWorking: true }) },
-    friday: { type: ScheduleSchema, default: () => ({ isWorking: true }) },
-    saturday: { type: ScheduleSchema, default: () => ({}) },
-    sunday: { type: ScheduleSchema, default: () => ({}) },
+    type: Object,
+    required: true,
   },
   createdAt: {
     type: Date,

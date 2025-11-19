@@ -1,19 +1,25 @@
+/*
+ * This file contains the controller functions for client authentication.
+ * It handles client registration and login processes, including token generation.
+ */
+
 const Client = require('../models/Client');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// --- Helper Function to Sign JWT ---
+// Generates a signed JWT token for a given client ID.
 const getSignedToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
 
-// --- Register Client ---
+// Registers a new client and returns an authentication token.
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
+    // Create a new client record. Password hashing is handled by the model's pre-save hook.
     const client = await Client.create({
       name,
       email,
@@ -28,7 +34,7 @@ exports.register = async (req, res) => {
   }
 };
 
-// --- Login Client ---
+// Authenticates a client and returns a JWT token if credentials are valid.
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -37,12 +43,14 @@ exports.login = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide email and password' });
     }
 
+    // Retrieve the client record including the password hash.
     const client = await Client.findOne({ email }).select('+password');
 
     if (!client) {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
+    // Compare the provided password with the stored hash.
     const isMatch = await bcrypt.compare(password, client.password);
 
     if (!isMatch) {

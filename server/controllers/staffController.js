@@ -1,10 +1,15 @@
+/*
+ * This file contains the controller functions for managing staff members.
+ * It handles creating, retrieving, updating, and deleting staff profiles, including checks for upcoming appointments before deletion.
+ */
+
 const Staff = require('../models/Staff');
 const Appointment = require('../models/Appointment');
 
-// @desc    Get all staff for the logged-in business
+// Retrieves all staff members associated with the currently authenticated business.
 exports.getStaff = async (req, res) => {
   try {
-    // req.business.id comes from the 'protect' middleware
+    // Fetch staff members where the business ID matches the authenticated user's ID.
     const staff = await Staff.find({ business: req.business.id }).populate('assignedServices', 'name duration');
     res.status(200).json({ success: true, count: staff.length, data: staff });
   } catch (error) {
@@ -12,7 +17,7 @@ exports.getStaff = async (req, res) => {
   }
 };
 
-// @desc    Get a single staff member by ID
+// Retrieves a specific staff member by their ID, ensuring the user is authorized to view it.
 exports.getStaffById = async (req, res) => {
   try {
     const staffMember = await Staff.findById(req.params.id);
@@ -21,7 +26,7 @@ exports.getStaffById = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Staff member not found' });
     }
 
-    // Check ownership
+    // Verify that the staff member belongs to the authenticated business.
     if (staffMember.business.toString() !== req.business.id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
@@ -32,10 +37,10 @@ exports.getStaffById = async (req, res) => {
   }
 };
 
-// @desc    Create a new staff member
+// Creates a new staff member profile for the authenticated business.
 exports.createStaff = async (req, res) => {
   try {
-    // Add the business ID from the logged-in user to the request body
+    // Associate the new staff member with the authenticated business ID.
     req.body.business = req.business.id;
 
     const staffMember = await Staff.create(req.body);
@@ -45,7 +50,7 @@ exports.createStaff = async (req, res) => {
   }
 };
 
-// @desc    Update a staff member
+// Updates an existing staff member's profile, ensuring the user is authorized to make changes.
 exports.updateStaff = async (req, res) => {
   try {
     let staffMember = await Staff.findById(req.params.id);
@@ -54,7 +59,7 @@ exports.updateStaff = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Staff member not found' });
     }
 
-    // Check ownership
+    // Verify that the staff member belongs to the authenticated business.
     if (staffMember.business.toString() !== req.business.id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
@@ -70,7 +75,7 @@ exports.updateStaff = async (req, res) => {
   }
 };
 
-// @desc    Delete a staff member
+// Deletes a staff member, ensuring no upcoming appointments exist before removal.
 exports.deleteStaff = async (req, res) => {
   try {
     const staffMember = await Staff.findById(req.params.id);
@@ -79,12 +84,12 @@ exports.deleteStaff = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Staff member not found' });
     }
 
-    // Check ownership
+    // Verify that the staff member belongs to the authenticated business.
     if (staffMember.business.toString() !== req.business.id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
     
-    // Check for future appointments before deleting
+    // Check for any future appointments assigned to this staff member.
     const upcomingAppointments = await Appointment.findOne({
         staff: req.params.id,
         startTime: { $gt: new Date() }
@@ -94,6 +99,7 @@ exports.deleteStaff = async (req, res) => {
         return res.status(400).json({ success: false, error: 'This staff member has upcoming appointments. Please reschedule or cancel them first.' });
     }
 
+    // Remove the staff member from the database.
     await staffMember.deleteOne();
 
     res.status(200).json({ success: true, data: {} });

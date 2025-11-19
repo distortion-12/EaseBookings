@@ -1,66 +1,90 @@
 /*
- * This component renders a list of services with filtering and pagination capabilities.
- * It allows users to filter services by category and location, and displays them using the ServiceCard component.
+ * This component renders a list of available services with filtering and pagination capabilities.
+ * It fetches service data from the API, allows users to filter by category and location, and displays the results in a grid.
  */
 
 import { useState, useEffect } from 'react';
 import ServiceCard from '@/components/booking/ServiceCard';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 
-// Mock data for services to demonstrate UI functionality.
-const MOCK_SERVICES_DATA = [
-  { _id: '1', name: "Women's Haircut", description: 'A full cut, wash, and professional styling. This is a longer description used to showcase how the slice functionality works when integrated into the card.', duration: 45, price: 65, category: 'Salons', business: { businessName: 'Glow Up Salon', address: 'New York' } },
-  { _id: '2', name: 'Manicure & Pedicure', description: 'Relaxing hand and foot treatment with your choice of polish.', duration: 60, price: 80, category: 'Salons', business: { businessName: 'Glow Up Salon', address: 'New York' } },
-  { _id: '3', name: 'Deep Tissue Massage', description: 'Targeted massage to relieve chronic muscle tension.', duration: 60, price: 110, category: 'Clinics', business: { businessName: 'Wellness Center', address: 'Bangalore' } },
-  { _id: '4', name: 'Tax Consultation', description: 'One hour of expert tax advice, including filing assistance.', duration: 60, price: 150, category: 'Consultants', business: { businessName: 'Legal Experts', address: 'Washington' } },
-  { _id: '5', name: 'Math Tutoring', description: 'One-on-one session with a certified math tutor.', duration: 90, price: 50, category: 'Tutors', business: { businessName: 'Learning Hub', address: 'Hyderabad' } },
-  { _id: '6', name: 'Dental Checkup', description: 'Full dental examination and cleaning.', duration: 30, price: 75, category: 'Clinics', business: { businessName: 'Smile Clinic', address: 'New York' } },
-  { _id: '7', name: 'Facial Treatment', description: 'Customized facial for skin rejuvenation.', duration: 60, price: 90, category: 'Salons', business: { businessName: 'Glow Up Salon', address: 'New York' } },
-  { _id: '8', name: 'Business Strategy Session', description: '3-hour deep dive into business planning and execution.', duration: 180, price: 300, category: 'Consultants', business: { businessName: 'Legal Experts', address: 'Washington' } },
-  { _id: '9', name: 'Physical Therapy', description: 'Personalized physical rehabilitation session.', duration: 60, price: 120, category: 'Clinics', business: { businessName: 'Wellness Center', address: 'Bangalore' } },
-];
-
-const ServiceCategories = ['Salons', 'Clinics', 'Consultants', 'Tutors'];
-const ServiceLocations = ['New York', 'Bangalore', 'Washington', 'Hyderabad'];
 const ITEMS_PER_PAGE = 6;
 
-// Component to display a filtered and paginated list of services.
-export default function ServiceList({ searchFilter }) {
+export default function ServiceListing({ searchFilter }) {
     
     const [showFilters, setShowFilters] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [selectedLocations, setSelectedLocations] = useState([]);
-    const [filteredServices, setFilteredServices] = useState(MOCK_SERVICES_DATA);
+    
+    const [services, setServices] = useState([]);
+    const [filteredServices, setFilteredServices] = useState([]);
+    const [loading, setLoading] = useState(true);
 
+    // State for dynamic filter options derived from fetched data.
+    const [serviceCategories, setServiceCategories] = useState([]);
+    const [serviceLocations, setServiceLocations] = useState([]);
+
+    // Fetches all available services on component mount.
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+                const res = await axios.get(`${API_URL}/public/services`);
+                if (res.data.success) {
+                    const fetchedServices = res.data.data;
+                    setServices(fetchedServices);
+                    
+                    // Extract unique categories (business types) and locations (cities) for filter lists.
+                    const categories = [...new Set(fetchedServices.map(s => s.business?.businessType).filter(Boolean))];
+                    const locations = [...new Set(fetchedServices.map(s => s.business?.address?.city).filter(Boolean))];
+                    
+                    setServiceCategories(categories);
+                    setServiceLocations(locations);
+                }
+            } catch (error) {
+                console.error('Error fetching services:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchServices();
+    }, []);
+
+    // Toggles the selection of a category filter.
     const handleCategoryChange = (category) => {
         setSelectedCategories(
             prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
         );
     };
 
+    // Toggles the selection of a location filter.
     const handleLocationChange = (location) => {
         setSelectedLocations(
             prev => prev.includes(location) ? prev.filter(c => c !== location) : [...prev, location]
         );
     };
 
-    // Apply filters based on category, location, and search criteria.
+    // Applies filters to the service list whenever filter criteria or data changes.
     useEffect(() => {
-        const matchesCategory = service => selectedCategories.length === 0 || selectedCategories.includes(service.category);
-        const matchesLocation = service => selectedLocations.length === 0 || selectedLocations.includes(service.business.address);
-        const matchesTitle = service => searchFilter.title === "" || service.name.toLowerCase().includes(searchFilter.title.toLowerCase());
-        const matchesSearchLocation = service => searchFilter.location === "" || service.business.address.toLowerCase().includes(searchFilter.location.toLowerCase());
+        if (loading) return;
 
-        const newFilteredServices = MOCK_SERVICES_DATA.filter(
+        const matchesCategory = service => selectedCategories.length === 0 || selectedCategories.includes(service.business?.businessType);
+        const matchesLocation = service => selectedLocations.length === 0 || selectedLocations.includes(service.business?.address?.city);
+        const matchesTitle = service => searchFilter.title === "" || service.name.toLowerCase().includes(searchFilter.title.toLowerCase());
+        const matchesSearchLocation = service => searchFilter.location === "" || (service.business?.address?.city || '').toLowerCase().includes(searchFilter.location.toLowerCase());
+
+        const newFilteredServices = services.filter(
             service => matchesCategory(service) && matchesLocation(service) && matchesTitle(service) && matchesSearchLocation(service)
         );
 
         setFilteredServices(newFilteredServices);
         setCurrentPage(1); 
-    }, [selectedCategories, selectedLocations, searchFilter]);
+    }, [selectedCategories, selectedLocations, searchFilter, services, loading]);
 
+    // Pagination logic.
     const totalPages = Math.ceil(filteredServices.length / ITEMS_PER_PAGE);
     const paginatedServices = filteredServices.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
@@ -70,12 +94,16 @@ export default function ServiceList({ searchFilter }) {
     // Determine if any search filters are currently active.
     const isSearched = searchFilter.title !== "" || searchFilter.location !== "";
 
+    if (loading) {
+        return <div className="text-center py-10">Loading services...</div>;
+    }
+
     return (
         <div className='flex flex-col lg:flex-row max-lg:space-y-8 py-8'>
-            {/* Sidebar for Filters */}
+            {/* Sidebar containing filter options */}
             <div className='w-full lg:w-1/4 bg-white px-4'>
                 
-                {/* Display Active Search Filters */}
+                {/* Display active search filters */}
                 {
                     isSearched && (
                         <>
@@ -102,11 +130,11 @@ export default function ServiceList({ searchFilter }) {
                     {showFilters ? "Close" : "Filters"}
                 </button>
 
-                {/* Category Filter Options */}
+                {/* Category Filter Section */}
                 <div className={showFilters ? "" : "max-lg:hidden"}>
                     <h4 className='font-medium text-lg py-4'>Filter by Category</h4>
                     <ul className='space-y-2 text-gray-600'>
-                        {ServiceCategories.map((category, index) => (
+                        {serviceCategories.map((category, index) => (
                                 <li className='flex gap-3 items-center' key={index}>
                                     <input 
                                         className='scale-125' 
@@ -116,15 +144,16 @@ export default function ServiceList({ searchFilter }) {
                                     />
                                     {category}
                                 </li>
-                            ))}  
+                            ))}
+                        {serviceCategories.length === 0 && <li>No categories found</li>}
                     </ul>
                 </div>
 
-                {/* Location Filter Options */}
+                {/* Location Filter Section */}
                 <div className={showFilters ? "" : "max-lg:hidden"}>
                     <h4 className='font-medium text-lg py-4 pt-14'>Filter by City</h4>
                     <ul className='space-y-2 text-gray-600'>
-                        {ServiceLocations.map((location, index) => (
+                        {serviceLocations.map((location, index) => (
                                 <li className='flex gap-3 items-center' key={index}>
                                     <input className='scale-125' 
                                            type='checkbox'
@@ -133,12 +162,13 @@ export default function ServiceList({ searchFilter }) {
                                     />
                                     {location}
                                 </li>
-                            ))}  
+                            ))}
+                        {serviceLocations.length === 0 && <li>No locations found</li>}
                     </ul>
                 </div>
             </div>
 
-            {/* Service Listings Grid */}
+            {/* Main content area displaying service cards */}
             <section className='w-full lg:w-3/4 text-gray-800 max:lg:px-4'>
                 <h3 className='font-medium text-3xl py-2' id='service-list'>Available Services</h3>
                 <p className='mb-8'>Book your desired service from top providers</p>
@@ -147,9 +177,10 @@ export default function ServiceList({ searchFilter }) {
                             <ServiceCard 
                                 key={index} 
                                 service={service} 
-                                businessSlug={service.business.businessName.toLowerCase().replace(/\s/g, '')} 
+                                businessSlug={service.business?.bookingPageSlug} 
                             />
                         ))}
+                        {paginatedServices.length === 0 && <p>No services found matching your criteria.</p>}
                 </div>
 
                 {/* Pagination Controls */}

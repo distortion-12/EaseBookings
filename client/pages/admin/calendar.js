@@ -1,23 +1,33 @@
+// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/pages/admin/calendar.js
+
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import AdminLayout from '@/components/admin/AdminLayout';
 import BookingCalendar from '@/components/admin/BookingCalendar';
 import { getBusinessAppointments } from '@/lib/api';
 import { getStaff } from '@/lib/api';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { startOfWeek, endOfWeek } from 'date-fns';
 
-// Mock Detail Modal (for when an event is clicked)
+// Mock Detail Modal (for when an event is clicked) - Styled to look like a modal/card
 const AppointmentDetailModal = ({ appt, onClose }) => (
   <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
-    <div className="bg-white p-6 rounded-lg w-full max-w-lg">
-      <h3 className="text-xl font-bold mb-4">Appointment Details</h3>
-      <p><strong>Client:</strong> {appt.client.name}</p>
-      <p><strong>Email:</strong> {appt.client.email}</p>
-      <p><strong>Service:</strong> {appt.service.name}</p>
-      <p><strong>Staff:</strong> {appt.staff.name}</p>
-      <p><strong>Time:</strong> {new Date(appt.startTime).toLocaleTimeString()} - {new Date(appt.endTime).toLocaleTimeString()}</p>
+    <div className="bg-white p-8 rounded-lg w-full max-w-lg shadow-2xl">
+      <h3 className="text-2xl font-bold text-gray-900 mb-6 border-b pb-3">Appointment Details</h3>
+      <div className='space-y-3 text-gray-700'>
+        <p><strong>Client:</strong> <span className='font-medium'>{appt.client.name}</span> ({appt.client.email})</p>
+        <p><strong>Service:</strong> <span className='font-medium'>{appt.service.name}</span> (${appt.service.price})</p>
+        <p><strong>Staff:</strong> <span className='font-medium'>{appt.staff.name}</span></p>
+        <p><strong>Time:</strong> {new Date(appt.startTime).toLocaleString()} - {new Date(appt.endTime).toLocaleTimeString()}</p>
+        <p><strong>Status:</strong> 
+          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold leading-5 ml-2 
+              ${appt.status === 'Confirmed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+            {appt.status}
+          </span>
+        </p>
+      </div>
       <button
         onClick={onClose}
-        className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
+        className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition-colors"
       >
         Close
       </button>
@@ -26,9 +36,10 @@ const AppointmentDetailModal = ({ appt, onClose }) => (
 );
 
 export default function CalendarPage() {
+  const { token } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [staffList, setStaffList] = useState([]);
-  const [selectedStaff, setSelectedStaff] = useState('all'); // Filter by staff [cite: 36]
+  const [selectedStaff, setSelectedStaff] = useState('all'); 
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   
   // Define the initial date range (current week)
@@ -40,26 +51,38 @@ export default function CalendarPage() {
   // Fetch staff for the filter dropdown
   useEffect(() => {
     const fetchStaff = async () => {
-      const staff = await getStaff();
-      setStaffList(staff);
+      if (token) {
+        try {
+          const staff = await getStaff(token);
+          setStaffList(staff);
+        } catch (error) {
+          console.error("Failed to fetch staff:", error);
+        }
+      }
     };
     fetchStaff();
-  }, []);
+  }, [token]);
 
   // Fetch appointments when date range or staff filter changes
   useEffect(() => {
     const fetchAppts = async () => {
-      let data = await getBusinessAppointments(dateRange.start, dateRange.end);
-      
-      // Filter by staff if not 'all'
-      if (selectedStaff !== 'all') {
-        data = data.filter(appt => appt.staff._id === selectedStaff);
+      if (token) {
+        try {
+          let data = await getBusinessAppointments(dateRange.start, dateRange.end, token);
+          
+          // Filter by staff if not 'all'
+          if (selectedStaff !== 'all') {
+            data = data.filter(appt => appt.staff._id === selectedStaff);
+          }
+          setAppointments(data);
+        } catch (error) {
+          console.error("Failed to fetch appointments:", error);
+        }
       }
-      setAppointments(data);
     };
     
     fetchAppts();
-  }, [dateRange, selectedStaff]);
+  }, [dateRange, selectedStaff, token]);
 
   const handleRangeChange = (start, end) => {
     setDateRange({ start, end });
@@ -70,9 +93,9 @@ export default function CalendarPage() {
   };
 
   return (
-    <AdminLayout title="Booking Calendar">
-      {/* Filters */}
-      <div className="flex justify-between items-center mb-6">
+    <AdminLayout title="Appointments Calendar">
+      {/* Filters & Actions - Styled like a secondary Job Portal action bar */}
+      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
         <div className="flex items-center space-x-4">
           <label htmlFor="staffFilter" className="text-sm font-medium text-gray-700">
             Filter by Staff:
@@ -92,8 +115,8 @@ export default function CalendarPage() {
             ))}
           </select>
         </div>
-        {/* We can add a "Manual Booking" button here [cite: 37] */}
-        <button className="inline-flex items-center gap-x-2 rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
+        {/* Button styled like Job Portal's "Apply Now" */}
+        <button className="inline-flex items-center gap-x-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-blue-700">
           Manual Booking
         </button>
       </div>

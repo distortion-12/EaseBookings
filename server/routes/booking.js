@@ -1,3 +1,8 @@
+/*
+ * This file defines the API routes for the booking process.
+ * It handles checking availability, creating new appointments, and retrieving appointment lists for admins.
+ */
+
 const express = require('express');
 const router = express.Router();
 const {
@@ -7,23 +12,13 @@ const {
 } = require('../controllers/appointmentController');
 const { protect } = require('../middleware/authMiddleware');
 
-// --- Public Client Routes ---
-
-// @route   GET /api/booking/:businessSlug/availability
-// @desc    Get available slots for a service/staff/date
-// @access  Public
+// Route to fetch available time slots for a specific service, staff member, and date.
 router.get('/:businessSlug/availability', getAvailability);
 
-// @route   POST /api/booking/:businessSlug/create
-// @desc    Create a new appointment
-// @access  Public
+// Route to create a new appointment booking for a client.
 router.post('/:businessSlug/create', createAppointment);
 
-// --- Admin-Only Route ---
-
-// @route   GET /api/booking/admin/my-appointments
-// @desc    Get all appointments for the logged-in admin
-// @access  Private
+// Route for business admins to retrieve their schedule of appointments. Requires authentication.
 router.get('/admin/my-appointments', protect, getBusinessAppointments);
 
 module.exports = router;

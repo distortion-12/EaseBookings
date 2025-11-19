@@ -1,24 +1,18 @@
+/*
+ * This component renders a form for creating or editing staff member details.
+ * It handles input validation, service assignment, and schedule management via the ScheduleEditor component.
+ */
+
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import ScheduleEditor from './ScheduleEditor';
 import { getServices } from '@/lib/api';
 
-/**
- * A form for creating or editing a staff member.
- * @param {object} initialData - The staff data to edit, or null to create.
- * @param {function} onSubmit - The function to call when the form is submitted.
- * @param {boolean} loading - Whether the form is currently submitting.
- */
+// Form component for staff management.
 export default function StaffForm({ initialData, onSubmit, loading }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    assignedServices: [],
-    schedule: {}, // Will be populated by ScheduleEditor
-  });
-  const [allServices, setAllServices] = useState([]);
-
-  // Default schedule for a new staff member
+  const { token } = useAuth();
+  
+  // Default schedule configuration for a new staff member.
   const defaultSchedule = {
     monday: { isWorking: true, startTime: '09:00', endTime: '17:00', breaks: [] },
     tuesday: { isWorking: true, startTime: '09:00', endTime: '17:00', breaks: [] },
@@ -29,23 +23,38 @@ export default function StaffForm({ initialData, onSubmit, loading }) {
     sunday: { isWorking: false, startTime: '09:00', endTime: '17:00', breaks: [] },
   };
 
-  // Fetch all available services for the multi-select
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    assignedServices: [],
+    schedule: defaultSchedule,
+  });
+  const [allServices, setAllServices] = useState([]);
+
+  // Fetch all available services to populate the assignment selection.
   useEffect(() => {
     const fetchServices = async () => {
-      const services = await getServices();
-      setAllServices(services);
+      if (token) {
+        try {
+          const services = await getServices(token);
+          setAllServices(services);
+        } catch (error) {
+          console.error("Failed to fetch services:", error);
+        }
+      }
     };
     fetchServices();
-  }, []);
+  }, [token]);
 
-  // Load initial data for editing
+  // Populate form with initial data if editing, otherwise reset to defaults.
   useEffect(() => {
     if (initialData) {
       setFormData({
         name: initialData.name || '',
         email: initialData.email || '',
         phone: initialData.phone || '',
-        assignedServices: initialData.assignedServices.map(s => s._id) || [], // Assuming assignedServices is populated
+        assignedServices: initialData.assignedServices ? initialData.assignedServices.map(s => s._id) : [],
         schedule: initialData.schedule || defaultSchedule,
       });
     } else {
@@ -155,12 +164,12 @@ export default function StaffForm({ initialData, onSubmit, loading }) {
         onChange={handleScheduleChange}
       />
 
-      {/* Submit Button */}
+      {/* Action Buttons */}
       <div className="pt-4 flex justify-end">
         <button
           type="submit"
           disabled={loading}
-          className="w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-400"
+          className="w-full justify-center rounded bg-black py-3 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 disabled:bg-gray-400"
         >
           {loading ? 'Saving...' : 'Save Staff Member'}
         </button>

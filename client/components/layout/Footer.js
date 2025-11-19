@@ -1,129 +1,36 @@
+// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/components/layout/Footer.js
+
 import Link from 'next/link';
 
+// Mock social icons (Job Portal used placeholder SVGs)
+const MOCK_ASSETS = {
+  twitter_icon: 'https://placehold.co/38x38/1da1f2/ffffff?text=X',
+  facebook_icon: 'https://placehold.co/38x38/4267b2/ffffff?text=F',
+  instagram_icon: 'https://placehold.co/38x38/e1306c/ffffff?text=I',
+}
+
 export default function Footer() {
-  const navigation = {
-    product: [
-      { name: 'Features', href: '#' },
-      { name: 'Pricing', href: '#' },
-      { name: 'How it works', href: '#' },
-    ],
-    company: [
-      { name: 'About', href: '#' },
-      { name: 'Blog', href: '#' },
-      { name: 'Contact', href: '#' },
-    ],
-    legal: [
-      { name: 'Privacy Policy', href: '#' },
-      { name: 'Terms of Service', href: '#' },
-    ],
-    support: [
-      { name: 'Help Center', href: '#' },
-      { name: 'FAQs', href: '#' },
-    ],
-  };
 
   return (
-    <footer className="bg-gray-900" aria-labelledby="footer-heading">
-      <h2 id="footer-heading" className="sr-only">
-        Footer
-      </h2>
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
-        <div className="xl:grid xl:grid-cols-3 xl:gap-8">
-          {/* Logo and Tagline */}
-          <div className="space-y-8 xl:col-span-1">
-            <span className="text-3xl font-bold text-white">
-              AppointEase
-            </span>
-            <p className="text-gray-400 text-base">
-              Effortless booking, managed.
-            </p>
-            {/* Social icons can go here */}
-          </div>
-          
-          {/* Navigation Links */}
-          <div className="mt-12 grid grid-cols-2 gap-8 xl:mt-0 xl:col-span-2">
-            <div className="md:grid md:grid-cols-2 md:gap-8">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-100 tracking-wider uppercase">
-                  Product
-                </h3>
-                <ul role="list" className="mt-4 space-y-4">
-                  {navigation.product.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="text-base text-gray-400 hover:text-white"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-12 md:mt-0">
-                <h3 className="text-sm font-semibold text-gray-100 tracking-wider uppercase">
-                  Company
-                </h3>
-                <ul role="list" className="mt-4 space-y-4">
-                  {navigation.company.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="text-base text-gray-400 hover:text-white"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="md:grid md:grid-cols-2 md:gap-8">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-100 tracking-wider uppercase">
-                  Support
-                </h3>
-                <ul role="list" className="mt-4 space-y-4">
-                  {navigation.support.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="text-base text-gray-400 hover:text-white"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-12 md:mt-0">
-                <h3 className="text-sm font-semibold text-gray-100 tracking-wider uppercase">
-                  Legal
-                </h3>
-                <ul role="list" className="mt-4 space-y-4">
-                  {navigation.legal.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="text-base text-gray-400 hover:text-white"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Copyright */}
-        <div className="mt-8 border-t border-gray-700 pt-8">
-          <p className="text-base text-gray-500 xl:text-center">
-            &copy; {new Date().getFullYear()} AppointEase. All rights reserved.
-          </p>
-        </div>
+    // Matching Job Portal's footer wrapper
+    <div className='container px-4 2xl:px-20 mx-auto flex items-center justify-between gap-4 py-3 mt-20 border-t border-gray-200'>
+      
+      {/* Mock Logo */}
+      <span className="text-2xl font-bold text-blue-600" style={{ minWidth: 160 }}>
+        AppointEase
+      </span>
+
+      {/* Copyright text (Matching Job Portal's text layout) */}
+      <p className='flex-1 border-l border-gray-400 pl-4 text-sm text-gray-500 max-sm:hidden'>
+        Copyright {new Date().getFullYear()} © AppointEase.com | All rights reserved.
+      </p>
+
+      {/* Social Icons */}
+      <div className='flex gap-2.5'>
+        <img width={38} src={MOCK_ASSETS.twitter_icon} alt="Twitter" />
+        <img width={38} src={MOCK_ASSETS.facebook_icon} alt="Facebook" />
+        <img width={38} src={MOCK_ASSETS.instagram_icon} alt="Instagram" />
       </div>
-    </footer>
+    </div>
   );
 }

@@ -1,6 +1,9 @@
-/**
- * A clickable card for a category (e.g., "Salons") on the homepage.
+/*
+ * This component renders a clickable card representing a service category.
+ * It displays an image, title, and description for the category.
  */
+
+// Component to display a category card with image and description.
 export default function CategoryCard({ name, description, imageUrl, onClick }) {
   return (
     <a

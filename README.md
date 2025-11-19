@@ -30,6 +30,15 @@ EMAIL_USER=your-email@example.com
 EMAIL_PASS=your-email-password
 ```
 
+**Environment variables**
+- `MONGO_URI` - MongoDB connection string for server.
+- `JWT_SECRET` - Secret for signing JWTs.
+- `OPENAI_API_KEY` - (optional) OpenAI API key used by the AI assistant endpoint.
+- `NEXT_PUBLIC_API_URL` - (client) URL to the server API (defaults to `http://localhost:8000/api`).
+
+**Notes**
+- The project includes an AI assistant endpoint at `/api/ai/chat` that forwards messages to OpenAI. Set `OPENAI_API_KEY` for it to work.
+
 Note: I inferred common names above. If your server expects different env names, update accordingly.
 
 ## Install dependencies

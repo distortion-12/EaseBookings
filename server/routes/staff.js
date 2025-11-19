@@ -1,3 +1,8 @@
+/*
+ * This file defines the API routes for managing staff members.
+ * It allows business owners to add, view, update, and remove staff from their team.
+ */
+
 const express = require('express');
 const router = express.Router();
 const {
@@ -9,27 +14,22 @@ const {
 } = require('../controllers/staffController');
 const { protect } = require('../middleware/authMiddleware');
 
-// All routes in this file are protected
+// Applies authentication middleware to ensure only logged-in business owners can manage staff.
 router.use(protect);
 
-// @route   GET /api/admin/staff
-// @desc    Get all staff for the logged-in business
+// Route to retrieve all staff members associated with the authenticated business.
 router.get('/', getStaff);
 
-// @route   POST /api/admin/staff
-// @desc    Create a new staff member
+// Route to add a new staff member to the team.
 router.post('/', createStaff);
 
-// @route   GET /api/admin/staff/:id
-// @desc    Get a single staff member by ID
+// Route to fetch details of a specific staff member by their ID.
 router.get('/:id', getStaffById);
 
-// @route   PUT /api/admin/staff/:id
-// @desc    Update a staff member
+// Route to update details of an existing staff member.
 router.put('/:id', updateStaff);
 
-// @route   DELETE /api/admin/staff/:id
-// @desc    Delete a staff member
+// Route to remove a staff member from the system.
 router.delete('/:id', deleteStaff);
 
 module.exports = router;

@@ -1,68 +1,167 @@
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import format from 'date-fns/format';
-import parse from 'date-fns/parse';
-import startOfWeek from 'date-fns/startOfWeek';
-import getDay from 'date-fns/getDay';
-import enUS from 'date-fns/locale/en-US';
-import { useMemo } from 'react';
+/*
+ * This component renders an interactive calendar for managing appointments.
+ * It uses 'react-big-calendar' to display events in month, week, and day views, allowing admins to visualize their schedule.
+ */
 
-// Setup the localizer by wrapping the functions
+import React, { useState, useMemo, useEffect } from 'react';
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+
+
+// Initialize the localizer for react-big-calendar using date-fns.
 const locales = {
-  'en-US': enUS,
+  'en-US': require('date-fns/locale/en-US'),
 };
+
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }), // Start week on Monday
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }), // Set Monday as the start of the week.
   getDay,
   locales,
 });
 
-/**
- * The main calendar component that displays appointments.
- * @param {Array} appointments - The raw appointment data from the API.
- * @param {function} onSelectEvent - Function to call when an event is clicked.
- * @param {function} onRangeChange - Function to call when the calendar's date range changes.
- */
+// Custom styling function for calendar events based on their status.
+const customEventStyles = (event, start, end, isSelected) => {
+    let style = {
+        // Green background for Confirmed appointments, Blue for others.
+        backgroundColor: event.status === 'Confirmed' ? '#10B981' : '#3B82F6', 
+        borderRadius: '5px',
+        opacity: 0.9,
+        color: 'white',
+        border: '0px',
+        display: 'block',
+        fontSize: '12px',
+        padding: '2px 5px',
+        cursor: 'pointer',
+    };
+
+    if (isSelected) {
+        style.border = '2px solid #1E40AF'; // Highlight selected events with a darker border.
+        style.opacity = 1;
+    }
+
+    return {
+        style: style,
+    };
+};
+
+// Main BookingCalendar component.
 export default function BookingCalendar({ appointments, onSelectEvent, onRangeChange }) {
-  // Format the raw appointment data into "events" for the calendar
+  const [view, setView] = useState('week'); // Default to week view.
+  const [date, setDate] = useState(new Date()); // Track the currently displayed date.
+
+  // Transform raw appointment data into calendar-compatible event objects.
   const events = useMemo(() => {
-    return appointments.map((appt) => ({
-      title: `${appt.client.name} - ${appt.service.name} (${appt.staff.name})`,
-      start: new Date(appt.startTime),
-      end: new Date(appt.endTime),
-      resource: appt, // Store the original appointment object
+    return appointments.map(appt => ({
+        title: `${appt.service.name} (${appt.client.name.split(' ')[0]})`,
+        start: new Date(appt.startTime),
+        end: new Date(appt.endTime),
+        resource: appt, // Store the full appointment object for detailed views.
+        status: appt.status,
     }));
   }, [appointments]);
+  
+  // Handle navigation between dates and views.
+  const onNavigate = (newDate, newView) => {
+    setDate(newDate);
+    // Calculate the visible date range to fetch relevant appointments.
+    const viewStart = localizer.startOf(newDate, newView);
+    const viewEnd = localizer.endOf(newDate, newView);
+    onRangeChange(viewStart, viewEnd);
+  }
 
-  // Handle the view changing (e.g., month to week) or date changing
-  const handleRangeChange = (range) => {
-    if (!onRangeChange) return;
+  // Set the initial date range on component mount.
+  useEffect(() => {
+    const initialStart = localizer.startOf(date, view);
+    const initialEnd = localizer.endOf(date, view);
+    onRangeChange(initialStart, initialEnd);
+  }, []); 
 
-    // 'range' can be an object with start/end (for month/week) or an array (for agenda)
-    if (Array.isArray(range)) {
-      onRangeChange(range[0], range[range.length - 1]);
-    } else {
-      onRangeChange(range.start, range.end);
-    }
+  // Custom toolbar component for the calendar header.
+  const CustomToolbar = (toolbar) => {
+    const goToBack = () => {
+      toolbar.onNavigate('PREV');
+    };
+
+    const goToNext = () => {
+      toolbar.onNavigate('NEXT');
+    };
+
+    const goToToday = () => {
+      toolbar.onNavigate('TODAY');
+    };
+
+    return (
+        <div className="flex justify-between items-center mb-6 p-3 bg-gray-50 rounded-lg shadow-sm border border-gray-100">
+            {/* Navigation Controls */}
+            <div className='flex space-x-2'>
+                <button
+                    onClick={goToBack}
+                    className="p-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                    <ChevronLeftIcon className='w-5 h-5' />
+                </button>
+                <button
+                    onClick={goToNext}
+                    className="p-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                    <ChevronRightIcon className='w-5 h-5' />
+                </button>
+            </div>
+            
+            {/* Current Date Label */}
+            <h2 className="text-xl font-semibold text-gray-900 mx-4">
+                {localizer.format(toolbar.date, 'MMMM yyyy')}
+            </h2>
+
+            {/* View Switcher Buttons */}
+            <div className='flex space-x-2 text-sm'>
+                <button
+                    onClick={goToToday}
+                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded font-medium hover:bg-gray-300 transition-colors"
+                >
+                    Today
+                </button>
+                {toolbar.views.map(v => (
+                    <button
+                        key={v}
+                        onClick={() => toolbar.onView(v)}
+                        className={v === toolbar.view
+                            ? "bg-blue-600 text-white px-4 py-2 rounded font-medium transition-colors" // Active view style
+                            : "bg-gray-200 text-gray-800 px-4 py-2 rounded font-medium hover:bg-gray-300 transition-colors" // Inactive view style
+                        }
+                    >
+                        {v.charAt(0).toUpperCase() + v.slice(1)}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
   };
-
+  
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md h-[70vh]">
+    <div className='bg-white p-6 rounded-lg shadow-lg border border-gray-100'>
       <Calendar
         localizer={localizer}
         events={events}
         startAccessor="start"
         endAccessor="end"
-        defaultView="week" // Default to week view [cite: 35]
-        views={['day', 'week', 'month']} // Show Day, Week, and Month formats [cite: 35]
-        step={30} // 30-minute slots
-        timeslots={2} // Two slots per hour (30 min)
-        min={new Date(0, 0, 0, 8, 0, 0)} // Day starts at 8:00 AM
-        max={new Date(0, 0, 0, 20, 0, 0)} // Day ends at 8:00 PM
+        style={{ height: 700 }}
+        resizable
+        selectable
         onSelectEvent={onSelectEvent}
-        onRangeChange={handleRangeChange}
-        popup
+        onNavigate={onNavigate}
+        onView={setView}
+        date={date}
+        views={['month', 'week', 'day']} 
+        defaultView="week"
+        components={{
+            toolbar: CustomToolbar,
+        }}
+        eventPropGetter={customEventStyles}
       />
     </div>
   );

@@ -1,11 +1,16 @@
+// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/pages/admin/services.js
+
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import AdminLayout from '@/components/admin/AdminLayout';
 import Modal from '@/components/common/Modal';
 import ServiceForm from '@/components/admin/ServiceForm';
 import { getServices, createService, updateService, deleteService } from '@/lib/api';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { format } from 'date-fns';
 
 export default function ServicesPage() {
+  const { token } = useAuth();
   const [services, setServices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -13,13 +18,19 @@ export default function ServicesPage() {
 
   // Fetch initial data
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (token) {
+      fetchData();
+    }
+  }, [token]);
 
   const fetchData = async () => {
     setLoading(true);
-    const data = await getServices();
-    setServices(data);
+    try {
+      const data = await getServices(token);
+      setServices(data.reverse()); // Reverse to show latest first, mimicking Job Portal
+    } catch (error) {
+      console.error("Failed to fetch services:", error);
+    }
     setLoading(false);
   };
 
@@ -35,27 +46,31 @@ export default function ServicesPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setEditingService(null); // Clear form
+    setEditingService(null);
   };
 
   const handleFormSubmit = async (formData) => {
     setLoading(true);
     let success = false;
     
-    if (editingService) {
-      // Update
-      const updated = await updateService(editingService._id, formData);
-      if (updated) {
-        setServices(services.map(s => s._id === updated._id ? updated : s));
-        success = true;
+    try {
+      if (editingService) {
+        // Update
+        const updated = await updateService(editingService._id, formData, token);
+        if (updated) {
+          setServices(services.map(s => s._id === updated._id ? updated : s));
+          success = true;
+        }
+      } else {
+        // Create
+        const created = await createService(formData, token);
+        if (created) {
+          setServices([created, ...services]); // Add to the front
+          success = true;
+        }
       }
-    } else {
-      // Create
-      const created = await createService(formData);
-      if (created) {
-        setServices([...services, created]);
-        success = true;
-      }
+    } catch (error) {
+      console.error("Failed to save service:", error);
     }
 
     setLoading(false);
@@ -65,74 +80,99 @@ export default function ServicesPage() {
   };
 
   const handleDelete = async (id) => {
-    // We should use a confirmation modal in a real app
     if (window.confirm('Are you sure you want to delete this service?')) {
-      const success = await deleteService(id);
-      if (success) {
-        setServices(services.filter(s => s._id !== id));
+      try {
+        const success = await deleteService(id, token);
+        if (success) {
+          setServices(services.filter(s => s._id !== id));
+        }
+      } catch (error) {
+        console.error("Failed to delete service:", error);
       }
     }
   };
 
   return (
     <AdminLayout title="Service Management">
-      {/* Header with Create Button */}
       <div className="flex justify-between items-center mb-6">
         <p className="text-gray-600">
-          Manage all services offered by your business.
+          Manage all available services for your business.
         </p>
-        <button
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-x-2 rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-        >
-          <PlusIcon className="h-5 w-5" />
-          Create Service
+      </div>
+
+      {/* Services Table - Mimicking Job Portal's table structure */}
+      {!loading && services.length === 0 ? (
+           <div className='flex flex-col items-center justify-center h-[50vh]'>
+            <p className='text-xl sm:text-2xl mb-4'>No Services Available or Posted</p>
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-x-2 rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            >
+              <PlusIcon className="h-5 w-5" />
+              Add New Service
+            </button>
+           </div>
+      ) : (
+      <>
+      <div className="overflow-x-auto">
+        <table className='min-w-full bg-white border border-gray-200 max-sm:text-sm'>
+            <thead>
+                <tr>
+                    <th className='py-2 px-4 border-b border-gray-200 text-left max-sm:hidden'>#</th>
+                    <th className='py-2 px-4 border-b border-gray-200 text-left'>Service Name</th>
+                    <th className='py-2 px-4 border-b border-gray-200 text-left max-sm:hidden'>Created On</th>
+                    <th className='py-2 px-4 border-b border-gray-200 text-center'>Duration / Price</th>
+                    <th className='py-2 px-4 border-b border-gray-200 text-left'>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {loading ? 
+                    <tr><td colSpan="5" className='py-4 text-center'>Loading services...</td></tr>
+                    :
+                    services.map((service, index) => (
+                        <tr key={service._id} className='text-gray-700'>
+                            <td className='py-2 px-4 border-b border-gray-200 max-sm:hidden'>{index + 1}</td>
+                            <td className='py-2 px-4 border-b border-gray-200'>
+                                <p className="font-medium text-gray-900">{service.name}</p>
+                                <p className="text-xs text-gray-500">{service.description ? service.description.substring(0, 50) + '...' : ''}</p>
+                            </td>
+                            <td className='py-2 px-4 border-b border-gray-200 max-sm:hidden'>
+                                {format(new Date(service.createdAt), 'MMM dd, yyyy')}
+                            </td>
+                            <td className='py-2 px-4 border-b border-gray-200 text-center'>
+                                {service.duration} min / ${service.price}
+                            </td>
+                            <td className='py-2 px-4 border-b border-gray-200'>
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={() => openEditModal(service)}
+                                        className="p-2 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                    >
+                                        <PencilIcon className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(service._id)}
+                                        className="p-2 rounded-md text-red-600 hover:text-red-800 hover:bg-red-50"
+                                    >
+                                        <TrashIcon className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+            </tbody>
+        </table>
+      </div>
+
+      <div className='mt-4 flex justify-end'>
+        <button onClick={openCreateModal} className='bg-black text-white py-2 px-4 rounded'>
+          Add New Service
         </button>
       </div>
+      </>
+      )}
 
-      {/* Services List/Table */}
-      <div className="overflow-hidden bg-white shadow sm:rounded-md">
-        <ul role="list" className="divide-y divide-gray-200">
-          {loading && <li><p className="p-4">Loading services...</p></li>}
-          {!loading && services.length === 0 && (
-            <li><p className="p-4 text-gray-500">No services found. Click "Create Service" to get started.</p></li>
-          )}
-          {services.map((service) => (
-            <li key={service._id}>
-              <div className="flex items-center justify-between p-4 hover:bg-gray-50">
-                <div className="flex-1 min-w-0">
-                  <p className="truncate text-md font-medium text-gray-900">
-                    {service.name}
-                  </p>
-                  <p className="truncate text-sm text-gray-500">
-                    {service.description || 'No description'}
-                  </p>
-                </div>
-                <div className="flex-1 min-w-0 text-center hidden sm:block">
-                  <span className="text-gray-900">${service.price}</span> /{' '}
-                  <span className="text-gray-500">{service.duration} min</span>
-                </div>
-                <div className="flex items-center space-x-2 ml-4">
-                  <button
-                    onClick={() => openEditModal(service)}
-                    className="p-2 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(service._id)}
-                    className="p-2 rounded-md text-red-400 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Modal - Keep as is */}
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
