@@ -32,19 +32,104 @@ export default function ServiceListing({ searchFilter }) {
             try {
                 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
                 const res = await axios.get(`${API_URL}/public/services`);
+                
+                let fetchedServices = [];
                 if (res.data.success) {
-                    const fetchedServices = res.data.data;
-                    setServices(fetchedServices);
-                    
-                    // Extract unique categories (business types) and locations (cities) for filter lists.
-                    const categories = [...new Set(fetchedServices.map(s => s.business?.businessType).filter(Boolean))];
-                    const locations = [...new Set(fetchedServices.map(s => s.business?.address?.city).filter(Boolean))];
-                    
-                    setServiceCategories(categories);
-                    setServiceLocations(locations);
+                    fetchedServices = res.data.data;
                 }
+
+                // Always append dummy data for demonstration purposes
+                const dummyServices = [
+                    {
+                        _id: 'dummy-1',
+                        name: 'Relaxing Massage (Demo)',
+                        description: 'A 60-minute full body massage to relieve stress.',
+                        price: 80,
+                        duration: 60,
+                        business: {
+                            _id: 'dummy-biz-1',
+                            businessName: 'Zen Spa',
+                            businessType: 'Spa',
+                            bookingPageSlug: 'zen-spa-demo',
+                            address: { city: 'New York' }
+                        }
+                    },
+                    {
+                        _id: 'dummy-2',
+                        name: 'Haircut & Style (Demo)',
+                        description: 'Professional haircut and styling session.',
+                        price: 50,
+                        duration: 45,
+                        business: {
+                            _id: 'dummy-biz-2',
+                            businessName: 'Style Studio',
+                            businessType: 'Salon',
+                            bookingPageSlug: 'style-studio-demo',
+                            address: { city: 'Los Angeles' }
+                        }
+                    },
+                    {
+                        _id: 'dummy-3',
+                        name: 'Dental Checkup (Demo)',
+                        description: 'Comprehensive dental exam and cleaning.',
+                        price: 120,
+                        duration: 30,
+                        business: {
+                            _id: 'dummy-biz-3',
+                            businessName: 'Bright Smiles',
+                            businessType: 'Clinic',
+                            bookingPageSlug: 'bright-smiles-demo',
+                            address: { city: 'Chicago' }
+                        }
+                    }
+                ];
+
+                const allServices = [...fetchedServices, ...dummyServices];
+                setServices(allServices);
+                
+                // Extract unique categories (business types) and locations (cities) for filter lists.
+                const categories = [...new Set(allServices.map(s => s.business?.businessType).filter(Boolean))];
+                const locations = [...new Set(allServices.map(s => s.business?.address?.city).filter(Boolean))];
+                
+                setServiceCategories(categories);
+                setServiceLocations(locations);
+
             } catch (error) {
                 console.error('Error fetching services:', error);
+                // Fallback on error
+                 const dummyServices = [
+                        {
+                            _id: 'dummy-1',
+                            name: 'Relaxing Massage (Demo)',
+                            description: 'A 60-minute full body massage to relieve stress.',
+                            price: 80,
+                            duration: 60,
+                            business: {
+                                _id: 'dummy-biz-1',
+                                businessName: 'Zen Spa',
+                                businessType: 'Spa',
+                                bookingPageSlug: 'zen-spa-demo',
+                                address: { city: 'New York' }
+                            }
+                        },
+                        {
+                            _id: 'dummy-2',
+                            name: 'Haircut & Style (Demo)',
+                            description: 'Professional haircut and styling session.',
+                            price: 50,
+                            duration: 45,
+                            business: {
+                                _id: 'dummy-biz-2',
+                                businessName: 'Style Studio',
+                                businessType: 'Salon',
+                                bookingPageSlug: 'style-studio-demo',
+                                address: { city: 'Los Angeles' }
+                            }
+                        }
+                    ];
+                    setServices(dummyServices);
+                    setServiceCategories(['Spa', 'Salon']);
+                    setServiceLocations(['New York', 'Los Angeles']);
             } finally {
                 setLoading(false);
             }

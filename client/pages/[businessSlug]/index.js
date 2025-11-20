@@ -1,5 +1,3 @@
-// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/pages/[businessSlug]/index.js
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -7,7 +5,7 @@ import axios from 'axios';
 import BusinessNavbar from '@/components/layout/BusinessNavbar';
 import ServiceCard from '@/components/booking/ServiceCard';
 import BookingFlowModal from '@/components/booking/BookingFlowModal';
-import { CalendarIcon, ClockIcon, UserIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'; // Icons for details
+import { CalendarIcon, ClockIcon, UserIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 
 export default function BusinessBookingPage() {
@@ -20,23 +18,85 @@ export default function BusinessBookingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // Mock 'Already Applied' state
+  // We track if the service is already booked (mock state).
   const [isBooked, setIsBooked] = useState(false); 
 
-  // Fetch business and service data
+  // We fetch the business details and services when the slug is available.
   useEffect(() => {
     if (!businessSlug) return;
 
     const fetchData = async () => {
+      // Check for demo slugs first
+      if (businessSlug.endsWith('-demo')) {
+          // Provide dummy data for demo businesses
+          const demoData = {
+              'zen-spa-demo': {
+                  business: {
+                      _id: 'dummy-biz-1',
+                      businessName: 'Zen Spa',
+                      description: 'Experience tranquility and rejuvenation at Zen Spa.',
+                      address: { street: '123 Peace Ave', city: 'New York', state: 'NY', zip: '10001' },
+                      phone: '555-0101',
+                      website: 'https://zenspa.demo',
+                      businessType: 'Spa',
+                      createdAt: new Date().toISOString()
+                  },
+                  services: [
+                      { _id: 'dummy-1', name: 'Relaxing Massage', description: 'A 60-minute full body massage.', price: 80, duration: 60, createdAt: new Date().toISOString() },
+                      { _id: 'dummy-1b', name: 'Deep Tissue Massage', description: 'Intense massage for muscle relief.', price: 100, duration: 60, createdAt: new Date().toISOString() }
+                  ]
+              },
+              'style-studio-demo': {
+                  business: {
+                      _id: 'dummy-biz-2',
+                      businessName: 'Style Studio',
+                      description: 'Modern cuts and styles for everyone.',
+                      address: { street: '456 Fashion Blvd', city: 'Los Angeles', state: 'CA', zip: '90001' },
+                      phone: '555-0202',
+                      website: 'https://stylestudio.demo',
+                      businessType: 'Salon',
+                      createdAt: new Date().toISOString()
+                  },
+                  services: [
+                      { _id: 'dummy-2', name: 'Haircut & Style', description: 'Professional haircut and styling.', price: 50, duration: 45, createdAt: new Date().toISOString() },
+                      { _id: 'dummy-2b', name: 'Coloring', description: 'Full hair coloring service.', price: 120, duration: 120, createdAt: new Date().toISOString() }
+                  ]
+              },
+              'bright-smiles-demo': {
+                  business: {
+                      _id: 'dummy-biz-3',
+                      businessName: 'Bright Smiles',
+                      description: 'Your family dental clinic.',
+                      address: { street: '789 Tooth Rd', city: 'Chicago', state: 'IL', zip: '60601' },
+                      phone: '555-0303',
+                      website: 'https://brightsmiles.demo',
+                      businessType: 'Clinic',
+                      createdAt: new Date().toISOString()
+                  },
+                  services: [
+                      { _id: 'dummy-3', name: 'Dental Checkup', description: 'Comprehensive exam and cleaning.', price: 120, duration: 30, createdAt: new Date().toISOString() }
+                  ]
+              }
+          };
+
+          const data = demoData[businessSlug];
+          if (data) {
+              setBusiness(data.business);
+              setServices(data.services);
+              setLoading(false);
+              return;
+          }
+      }
+
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-        // 1. Fetch Business Details
+        // We fetch the business details.
         const businessRes = await axios.get(`${API_URL}/public/business/${businessSlug}`);
         if (businessRes.data.success) {
           setBusiness(businessRes.data.data);
         }
 
-        // 2. Fetch Services
+        // We fetch the services offered by the business.
         const servicesRes = await axios.get(`${API_URL}/public/business/${businessSlug}/services`);
         if (servicesRes.data.success) {
           setServices(servicesRes.data.data);
@@ -78,7 +138,7 @@ export default function BusinessBookingPage() {
     return <div className="flex justify-center items-center h-screen">Business not found</div>;
   }
   
-  // If serviceId is present and service found, show Service Detail View
+  // If a specific service is selected, we show the service detail view.
   if (service) {
     const postedDate = format(new Date(service.createdAt || Date.now()), 'MMM dd, yyyy');
     return (
@@ -172,7 +232,7 @@ export default function BusinessBookingPage() {
     );
   }
 
-  // Default View: Business Landing Page (Services List + Reviews)
+  // Default View: Business Landing Page with services list.
   return (
     <>
       <Head>

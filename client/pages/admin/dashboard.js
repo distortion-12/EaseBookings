@@ -1,11 +1,9 @@
-// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/pages/admin/dashboard.js
-
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import { CalendarIcon, CurrencyDollarIcon, UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { format, isToday } from 'date-fns';
 
-// Mock data for the dashboard
+// We use mock data for the dashboard statistics.
 const stats = [
   { name: 'Today\'s Appointments', stat: '12', icon: CalendarIcon },
   { name: 'Pending Bookings', stat: '2', icon: ClockIcon },
@@ -23,20 +21,21 @@ export default function DashboardPage() {
   const { user, loading } = useAuth();
   
   if (loading || !user) {
-    return null; // Handled by AdminLayout
+    // The layout handles the loading state and redirection if not authenticated.
+    return null;
   }
 
   const todayBookings = mockBookings.filter(appt => isToday(appt.date)).slice(0, 5);
-  const recentBookings = mockBookings.slice(0, 5); // Fallback for recent activity
+  const recentBookings = mockBookings.slice(0, 5);
 
   return (
     <AdminLayout title="Dashboard Home">
-      {/* Welcome Message */}
+      {/* We display a welcome message with the user's name and business name. */}
       <h2 className="text-2xl font-semibold text-gray-800 mb-8 max-sm:text-xl">
         Welcome, {user?.ownerName}! Here is a snapshot of {user?.businessName}.
       </h2>
 
-      {/* Stats Cards - Matching the card style */}
+      {/* We display key statistics in cards. */}
       <div className='mb-10'>
         <dl className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           {stats.map((item) => (
@@ -56,12 +55,11 @@ export default function DashboardPage() {
         </dl>
       </div>
 
-      {/* Recent Activity Section (Table View) */}
+      {/* We display a table of recent appointments. */}
       <div className="mt-10">
         <h3 className="text-xl font-semibold text-gray-900 mb-4">
           Recent Appointments
         </h3>
-        {/* Table structure mirroring ManageJobs.jsx */}
         <div className="overflow-x-auto">
           <table className='min-w-full bg-white border border-gray-200 max-sm:text-sm'>
               <thead>

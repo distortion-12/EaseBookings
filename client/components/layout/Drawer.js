@@ -1,15 +1,11 @@
-// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/components/layout/Drawer.js
-
+// This component renders a mobile drawer menu for the platform, providing navigation links and category browsing options.
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-/**
- * The mobile drawer menu for the Platform Homepage.
- */
 export default function Drawer({ isOpen, onClose, onCategoryClick }) {
   
-  // Navigation Links for the drawer
+  // Defines the list of main navigation links to be displayed in the drawer.
   const navLinks = [
     { name: 'Home', href: '/', onClick: () => {} },
     { name: 'Help', href: '#', onClick: () => {} },

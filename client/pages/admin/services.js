@@ -1,5 +1,3 @@
-// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/pages/admin/services.js
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -14,9 +12,9 @@ export default function ServicesPage() {
   const [services, setServices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [editingService, setEditingService] = useState(null); // null for create, object for edit
+  const [editingService, setEditingService] = useState(null);
 
-  // Fetch initial data
+  // We fetch the initial list of services when the component mounts.
   useEffect(() => {
     if (token) {
       fetchData();
@@ -27,7 +25,8 @@ export default function ServicesPage() {
     setLoading(true);
     try {
       const data = await getServices(token);
-      setServices(data.reverse()); // Reverse to show latest first, mimicking Job Portal
+      // We reverse the data to show the most recently created services first.
+      setServices(data.reverse());
     } catch (error) {
       console.error("Failed to fetch services:", error);
     }
@@ -55,17 +54,17 @@ export default function ServicesPage() {
     
     try {
       if (editingService) {
-        // Update
+        // We update the existing service.
         const updated = await updateService(editingService._id, formData, token);
         if (updated) {
           setServices(services.map(s => s._id === updated._id ? updated : s));
           success = true;
         }
       } else {
-        // Create
+        // We create a new service and add it to the list.
         const created = await createService(formData, token);
         if (created) {
-          setServices([created, ...services]); // Add to the front
+          setServices([created, ...services]);
           success = true;
         }
       }
@@ -100,7 +99,7 @@ export default function ServicesPage() {
         </p>
       </div>
 
-      {/* Services Table - Mimicking Job Portal's table structure */}
+      {/* We display the list of services in a table, or a message if no services exist. */}
       {!loading && services.length === 0 ? (
            <div className='flex flex-col items-center justify-center h-[50vh]'>
             <p className='text-xl sm:text-2xl mb-4'>No Services Available or Posted</p>
@@ -172,7 +171,7 @@ export default function ServicesPage() {
       </>
       )}
 
-      {/* Create/Edit Modal - Keep as is */}
+      {/* We use a modal for creating and editing services. */}
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}

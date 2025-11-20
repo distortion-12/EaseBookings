@@ -1,5 +1,3 @@
-// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/pages/admin/staff.js
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -13,9 +11,9 @@ export default function StaffPage() {
   const [staff, setStaff] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [editingStaff, setEditingStaff] = useState(null); // null for create, object for edit
+  const [editingStaff, setEditingStaff] = useState(null);
 
-  // Fetch initial data
+  // We fetch the initial list of staff members when the component mounts.
   useEffect(() => {
     if (token) {
       fetchData();
@@ -25,7 +23,7 @@ export default function StaffPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Sort logic mimicking Job Portal: latest first
+      // We fetch the staff list and reverse it to show the newest members first.
       const data = await getStaff(token);
       setStaff(data.reverse()); 
     } catch (error) {
@@ -46,7 +44,7 @@ export default function StaffPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setEditingStaff(null); // Clear form
+    setEditingStaff(null);
   };
 
   const handleFormSubmit = async (formData) => {
@@ -55,17 +53,17 @@ export default function StaffPage() {
     
     try {
       if (editingStaff) {
-        // Update
+        // We update the existing staff member.
         const updated = await updateStaff(editingStaff._id, formData, token);
         if (updated) {
           setStaff(staff.map(s => s._id === updated._id ? updated : s));
           success = true;
         }
       } else {
-        // Create
+        // We create a new staff member and add them to the list.
         const created = await createStaff(formData, token);
         if (created) {
-          setStaff([created, ...staff]); // Add to front
+          setStaff([created, ...staff]);
           success = true;
         }
       }
@@ -108,7 +106,7 @@ export default function StaffPage() {
             </button>
           </div>
           
-          {/* Create/Edit Modal - Included here for empty state */}
+          {/* We include the modal here as well to allow creating the first staff member. */}
           <Modal
             isOpen={isModalOpen}
             onClose={closeModal}
@@ -134,7 +132,7 @@ export default function StaffPage() {
         </p>
       </div>
 
-      {/* Staff Table - Mimicking Job Portal's table structure */}
+      {/* We display the list of staff members in a table. */}
       <div className="overflow-x-auto">
         <table className='min-w-full bg-white border border-gray-200 max-sm:text-sm'>
             <thead>
@@ -191,13 +189,13 @@ export default function StaffPage() {
         </button>
       </div>
 
-      {/* Create/Edit Modal */}
+      {/* We use a modal for creating and editing staff members. */}
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
         title={editingStaff ? 'Edit Staff Member' : 'Create New Staff Member'}
       >
-        {/* The modal is set to overflow, so the form inside can be long */}
+        {/* We allow the modal content to scroll if the form is too long. */}
         <div className="max-h-[75vh] overflow-y-auto pr-2">
           <StaffForm
             initialData={editingStaff}

@@ -1,5 +1,3 @@
-// distortion-12/easebookings/EaseBookings-2ccb84a3b45beba25b333745f5ab8d56d164e37d/client/pages/admin/calendar.js
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -8,7 +6,7 @@ import { getBusinessAppointments } from '@/lib/api';
 import { getStaff } from '@/lib/api';
 import { startOfWeek, endOfWeek } from 'date-fns';
 
-// Mock Detail Modal (for when an event is clicked) - Styled to look like a modal/card
+// We display a modal with appointment details when an event is clicked.
 const AppointmentDetailModal = ({ appt, onClose }) => (
   <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
     <div className="bg-white p-8 rounded-lg w-full max-w-lg shadow-2xl">
@@ -42,13 +40,13 @@ export default function CalendarPage() {
   const [selectedStaff, setSelectedStaff] = useState('all'); 
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   
-  // Define the initial date range (current week)
+  // We initialize the date range to the current week.
   const [dateRange, setDateRange] = useState({
     start: startOfWeek(new Date()),
     end: endOfWeek(new Date()),
   });
 
-  // Fetch staff for the filter dropdown
+  // We fetch the list of staff members to populate the filter dropdown.
   useEffect(() => {
     const fetchStaff = async () => {
       if (token) {
@@ -63,14 +61,14 @@ export default function CalendarPage() {
     fetchStaff();
   }, [token]);
 
-  // Fetch appointments when date range or staff filter changes
+  // We fetch appointments whenever the date range or the selected staff filter changes.
   useEffect(() => {
     const fetchAppts = async () => {
       if (token) {
         try {
           let data = await getBusinessAppointments(dateRange.start, dateRange.end, token);
           
-          // Filter by staff if not 'all'
+          // If a specific staff member is selected, we filter the appointments accordingly.
           if (selectedStaff !== 'all') {
             data = data.filter(appt => appt.staff._id === selectedStaff);
           }
@@ -89,12 +87,12 @@ export default function CalendarPage() {
   };
 
   const handleEventClick = (event) => {
-    setSelectedAppointment(event.resource); // The resource is the original appt object
+    setSelectedAppointment(event.resource);
   };
 
   return (
     <AdminLayout title="Appointments Calendar">
-      {/* Filters & Actions - Styled like a secondary Job Portal action bar */}
+      {/* We provide filters and actions for the calendar view. */}
       <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
         <div className="flex items-center space-x-4">
           <label htmlFor="staffFilter" className="text-sm font-medium text-gray-700">
@@ -115,20 +113,20 @@ export default function CalendarPage() {
             ))}
           </select>
         </div>
-        {/* Button styled like Job Portal's "Apply Now" */}
+        {/* Manual booking button */}
         <button className="inline-flex items-center gap-x-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-blue-700">
           Manual Booking
         </button>
       </div>
 
-      {/* The Calendar Component */}
+      {/* We render the calendar component with the fetched appointments. */}
       <BookingCalendar
         appointments={appointments}
         onSelectEvent={handleEventClick}
         onRangeChange={handleRangeChange}
       />
 
-      {/* Appointment Detail Modal */}
+      {/* We show the appointment detail modal if an appointment is selected. */}
       {selectedAppointment && (
         <AppointmentDetailModal
           appt={selectedAppointment}
