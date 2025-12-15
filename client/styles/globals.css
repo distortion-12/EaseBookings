@@ -22,3 +22,14 @@ body {
 	padding-right: 1rem;
 }
 
+/* Subtle page background to add depth */
+.app-bg {
+  background: radial-gradient(1200px 600px at 10% -10%, rgba(79, 70, 229, 0.08), transparent 60%),
+              radial-gradient(800px 400px at 90% -10%, rgba(14, 165, 233, 0.08), transparent 60%);
+}
+
+/* Smooth transitions for interactive elements */
+.btn {
+  @apply transition-all shadow-sm hover:shadow rounded-xl;
+}
+

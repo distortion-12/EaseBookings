@@ -23,15 +23,16 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-gray-900" aria-labelledby="footer-heading">
+    <footer className="bg-gray-900 relative overflow-hidden" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">
         Footer
       </h2>
+      <div className="absolute inset-x-0 -top-24 h-48 bg-gradient-to-b from-indigo-600/20 to-transparent pointer-events-none" />
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
           {/* Logo and Tagline */}
           <div className="space-y-8 xl:col-span-1">
-            <span className="text-3xl font-bold text-white">
+            <span className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-sky-400">
               AppointEase
             </span>
             <p className="text-gray-400 text-base">
@@ -118,7 +119,7 @@ export default function Footer() {
         </div>
         
         {/* Copyright */}
-        <div className="mt-8 border-t border-gray-700 pt-8">
+        <div className="mt-8 border-t border-gray-800 pt-8">
           <p className="text-base text-gray-500 xl:text-center">
             &copy; {new Date().getFullYear()} AppointEase. All rights reserved.
           </p>

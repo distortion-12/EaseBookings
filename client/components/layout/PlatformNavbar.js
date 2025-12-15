@@ -19,7 +19,7 @@ export default function PlatformNavbar({ onLoginClick }) {
 
   return (
     <>
-      <nav className="bg-white shadow-md sticky top-0 z-40">
+      <nav className="bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm sticky top-0 z-40 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -33,29 +33,29 @@ export default function PlatformNavbar({ onLoginClick }) {
               
               {/* ... (Logo) ... */}
               <a href="#" onClick={() => router.push('/')} className="flex-shrink-0 flex items-center">
-                <span className="text-2xl font-bold text-blue-600">
+                <span className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-sky-500">
                   AppointEase
                 </span>
               </a>
               
               {/* ... (Desktop Nav Links) ... */}
-              <div className="hidden lg:flex lg:items-center lg:space-x-4">
+              <div className="hidden lg:flex lg:items-center lg:space-x-2">
                 <a
                   href="#"
                   onClick={() => router.push('/')}
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Home
                 </a>
                 <a
                   href="#"
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   Help
                 </a>
                 <a
                   href="#"
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   For Businesses
                 </a>
@@ -68,7 +68,7 @@ export default function PlatformNavbar({ onLoginClick }) {
                 // If client is logged in, show a "Log Out" button
                 <button
                   onClick={clientLogout}
-                  className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
+                  className="bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-red-700 transition-all shadow-sm hover:shadow"
                 >
                   Log Out
                 </button>
@@ -76,7 +76,7 @@ export default function PlatformNavbar({ onLoginClick }) {
                 // If not logged in, show the "Login / Sign Up" button
                 <button
                   onClick={onLoginClick}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-all shadow-sm hover:shadow"
                 >
                   Login / Sign Up
                 </button>

@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import Modal from '@/components/common/Modal';
 import { format, addDays } from 'date-fns';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
+import ClientAuthModal from '@/components/booking/ClientAuthModal';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/router';
 
 // --- Mock Staff (for demo) ---
 const MOCK_STAFF = [
@@ -21,6 +24,19 @@ export default function BookingFlowModal({ isOpen, onClose, service, businessSlu
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [clientDetails, setClientDetails] = useState({ name: '', email: '', phone: '' });
+  const { clientUser } = useAuth();
+  const [isClientAuthOpen, setIsClientAuthOpen] = useState(false);
+  const router = useRouter();
+
+  // Auto-progress once client logs in
+  useEffect(() => {
+    if (isOpen && isClientAuthOpen && clientUser) {
+      setIsClientAuthOpen(false);
+      if (currentStep === 1 && selectedSlot) {
+        setCurrentStep(2);
+      }
+    }
+  }, [clientUser, isOpen, isClientAuthOpen, currentStep, selectedSlot]);
 
   // Reset state when modal is closed or service changes
   useEffect(() => {
@@ -75,6 +91,11 @@ export default function BookingFlowModal({ isOpen, onClose, service, businessSlu
 
   const handleNextStep = () => {
     if (currentStep === 1 && selectedSlot) {
+      // Require client login before moving to details step
+      if (!clientUser) {
+        setIsClientAuthOpen(true);
+        return;
+      }
       setCurrentStep(2);
     }
   };
@@ -90,49 +111,45 @@ export default function BookingFlowModal({ isOpen, onClose, service, businessSlu
   };
 
   const handleConfirmBooking = async () => {
-    console.log('Booking Confirmed:', {
+    // Block booking if not logged in
+    if (!clientUser) {
+      setIsClientAuthOpen(true);
+      return;
+    }
+
+    if (!selectedSlot) return;
+
+    const pendingBooking = {
+      businessSlug,
       serviceId: service._id,
       staffId: selectedStaff,
       startTime: selectedSlot,
       client: clientDetails,
-    });
+      serviceName: service.name,
+      servicePrice: service.price,
+      serviceDuration: service.duration,
+    };
 
-    // --- Real API Call ---
-    // try {
-    //   const res = await fetch(`/api/booking/${businessSlug}/create`, {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({
-    //       serviceId: service._id,
-    //       staffId: selectedStaff,
-    //       startTime: selectedSlot,
-    //       client: clientDetails,
-    //     })
-    //   });
-    //   const data = await res.json();
-    //   if (data.success) {
-    //     alert('Booking confirmed!');
-    //     onClose();
-    //   } else {
-    //     alert(`Error: ${data.error}`);
-    //   }
-    // } catch (error) {
-    //   alert('An unknown error occurred.');
-    // }
-
-    // --- Mock Booking ---
-    alert('Booking confirmed! (Mock)');
-    onClose();
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('pendingBooking', JSON.stringify(pendingBooking));
+      }
+      await router.push('/checkout');
+      onClose();
+    } catch (error) {
+      console.error('Failed to start checkout', error);
+    }
   };
 
   if (!service) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Book: ${service.name}`}
-    >
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={`Book: ${service.name}`}
+      >
       <div className="w-full">
         {/* Step Indicator */}
         <ol className="flex items-center w-full space-x-4 mb-8">
@@ -256,6 +273,12 @@ export default function BookingFlowModal({ isOpen, onClose, service, businessSlu
           </div>
         </div>
       </div>
-    </Modal>
+      </Modal>
+      {/* Client Auth Modal */}
+      <ClientAuthModal
+        isOpen={isClientAuthOpen}
+        onClose={() => setIsClientAuthOpen(false)}
+      />
+    </>
   );
 }

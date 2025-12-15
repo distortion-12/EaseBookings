@@ -12,7 +12,7 @@ const getSignedToken = (id) => {
 // --- Register Business ---
 exports.register = async (req, res) => {
   try {
-    const { ownerName, businessName, email, password } = req.body;
+    const { ownerName, businessName, email, password, address, city, phone, category, hours } = req.body;
 
     // --- NEW HASHING LOGIC ---
     // 1. Generate salt
@@ -21,18 +21,29 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
     // --- END NEW LOGIC ---
 
-    // 3. Create the business owner with the HASHED password
+    // 3. Generate a unique slug from business name
+    const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '') + Date.now().toString().slice(-4);
+
+    // 4. Create the business owner with all details
     const business = await Business.create({
       ownerName,
       businessName,
       email,
-      password: hashedPassword, // Use the hashed password
+      password: hashedPassword,
+      address,
+      city,
+      phone,
+      category,
+      hours: hours || '9:00 AM - 6:00 PM',
+      config: {
+        bookingPageSlug: slug,
+      }
     });
 
-    // 4. Create a token
+    // 5. Create a token
     const token = getSignedToken(business._id);
 
-    // 5. Send response
+    // 6. Send response
     res.status(201).json({ success: true, token });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });

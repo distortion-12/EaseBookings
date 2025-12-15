@@ -25,6 +25,27 @@ const BusinessSchema = new mongoose.Schema({
     minlength: 6,
     select: false,
   },
+  address: {
+    type: String,
+    required: [true, 'Please add a business address'],
+  },
+  city: {
+    type: String,
+    required: [true, 'Please add a city'],
+  },
+  phone: {
+    type: String,
+    required: [true, 'Please add a phone number'],
+  },
+  category: {
+    type: String,
+    required: [true, 'Please add a business category'],
+    enum: ['salons', 'clinics', 'consultants', 'tutors'],
+  },
+  hours: {
+    type: String,
+    default: '9:00 AM - 6:00 PM',
+  },
   config: {
     timezone: {
       type: String,

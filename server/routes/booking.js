@@ -4,8 +4,9 @@ const {
   getAvailability,
   createAppointment,
   getBusinessAppointments,
+  createPaymentOrder,
 } = require('../controllers/appointmentController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, clientProtect } = require('../middleware/authMiddleware');
 
 // --- Public Client Routes ---
 
@@ -16,8 +17,13 @@ router.get('/:businessSlug/availability', getAvailability);
 
 // @route   POST /api/booking/:businessSlug/create
 // @desc    Create a new appointment
-// @access  Public
-router.post('/:businessSlug/create', createAppointment);
+// @access  Client Private
+router.post('/:businessSlug/create', clientProtect, createAppointment);
+
+// @route   POST /api/booking/:businessSlug/payment/order
+// @desc    Create Razorpay order and hold the slot
+// @access  Client Private
+router.post('/:businessSlug/payment/order', clientProtect, createPaymentOrder);
 
 // --- Admin-Only Route ---
 

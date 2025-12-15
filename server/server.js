@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const { razorpayWebhook } = require('./controllers/appointmentController');
 
 // Load env vars
 dotenv.config();
@@ -22,6 +23,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 // --- END CORS FIX ---
 
+// Razorpay webhook needs raw body for signature verification
+app.post(
+  '/api/booking/payments/razorpay-webhook',
+  express.raw({ type: 'application/json' }),
+  razorpayWebhook
+);
 
 // Body parser middleware (to accept JSON)
 app.use(express.json());
@@ -37,6 +44,7 @@ app.use('/api/admin/services', require('./routes/service'));
 app.use('/api/admin/staff', require('./routes/staff'));
 app.use('/api/booking', require('./routes/booking'));
 app.use('/api/client-auth', require('./routes/clientAuth'));
+app.use('/api/business', require('./routes/business'));
 
 const PORT = process.env.PORT || 8000;
 

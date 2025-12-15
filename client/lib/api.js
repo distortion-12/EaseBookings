@@ -108,3 +108,16 @@ export const getBusinessAppointments = async (startDate, endDate) => {
     return [];
   }
 };
+
+// --- Booking + Payments (Client) ---
+
+export const initiateBookingPayment = async (businessSlug, payload) => {
+  try {
+    const res = await axios.post(`/api/booking/${businessSlug}/payment/order`, payload);
+    return res.data.data;
+  } catch (error) {
+    const message = error.response?.data?.error || 'Unable to start payment. Please retry.';
+    toast.error(message);
+    return null;
+  }
+};

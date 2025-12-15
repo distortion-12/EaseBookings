@@ -61,9 +61,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const adminRegister = async (ownerName, businessName, email, password) => {
+  const adminRegister = async (formData) => {
     try {
-      const res = await axios.post('/api/auth/register', { ownerName, businessName, email, password });
+      const res = await axios.post('/api/auth/register', formData);
       const { token } = res.data;
       localStorage.setItem('token', token);
       setAuthHeader(token);
@@ -105,6 +105,7 @@ export const AuthProvider = ({ children }) => {
         if (decoded.exp * 1000 < Date.now()) {
           clientLogout();
         } else {
+          setAuthHeader(clientToken);
           setClientUser({ id: decoded.id });
         }
       } catch (error) {
@@ -120,6 +121,7 @@ export const AuthProvider = ({ children }) => {
       const { token } = res.data;
       localStorage.setItem('clientToken', token);
       const decoded = jwtDecode(token); // This line will now work
+      setAuthHeader(token);
       setClientUser({ id: decoded.id });
       toast.success('Account created successfully!');
       return true;
@@ -146,6 +148,7 @@ export const AuthProvider = ({ children }) => {
       const { token } = res.data;
       localStorage.setItem('clientToken', token);
       const decoded = jwtDecode(token); // This line will now work
+      setAuthHeader(token);
       setClientUser({ id: decoded.id });
       toast.success('Logged in successfully!');
       return true;
@@ -168,6 +171,7 @@ export const AuthProvider = ({ children }) => {
 
   const clientLogout = () => {
     localStorage.removeItem('clientToken');
+    setAuthHeader(null);
     setClientUser(null);
     toast.success('Logged out.');
   };

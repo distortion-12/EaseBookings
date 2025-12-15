@@ -7,37 +7,86 @@ import BookingFlowModal from '@/components/booking/BookingFlowModal';
 
 // --- Mock Data (for demo) ---
 // In a real app, this would be fetched from your API
-const MOCK_BUSINESS_DATA = {
-  name: 'The Glow Up Salon',
-  address: '123 Beauty Ln, New York, NY 10001',
-  phone: '(212) 555-1234',
-  hours: '9:00 AM - 6:00 PM',
-  bannerUrl: 'https://placehold.co/1200x200/f472b6/ffffff?text=Glow+Up+Salon',
+const DEMO_BUSINESSES = {
+  glowupsalon: {
+    category: 'salons',
+    name: 'The Glow Up Salon',
+    address: '123 Beauty Ln, New York, NY 10001',
+    phone: '(212) 555-1234',
+    hours: '9:00 AM - 6:00 PM',
+    bannerUrl: 'https://placehold.co/1200x200/f472b6/ffffff?text=Glow+Up+Salon',
+    services: [
+      { _id: 's1', name: "Women's Haircut & Style", description: 'A full cut, wash, and professional styling.', duration: 45, price: 65 },
+      { _id: 's2', name: 'Manicure & Pedicure Combo', description: 'Relaxing hand and foot treatment with your choice of polish.', duration: 60, price: 80 },
+      { _id: 's3', name: '60-Minute Deep Tissue Massage', description: 'Targeted massage to relieve chronic muscle tension.', duration: 60, price: 110 },
+    ],
+  },
+  wellcareclinic: {
+    category: 'clinics',
+    name: 'WellCare Clinic',
+    address: '75 Wellness Ave, New York, NY 10002',
+    phone: '(212) 555-9001',
+    hours: '8:00 AM - 5:00 PM',
+    bannerUrl: 'https://placehold.co/1200x200/34d399/ffffff?text=WellCare+Clinic',
+    services: [
+      { _id: 'c1', name: 'General Consultation', description: 'Comprehensive primary care consultation.', duration: 30, price: 50 },
+      { _id: 'c2', name: 'Dental Cleaning', description: 'Routine cleaning and hygiene check.', duration: 45, price: 90 },
+      { _id: 'c3', name: 'Blood Work Panel', description: 'Standard diagnostic panel.', duration: 20, price: 70 },
+    ],
+  },
+  smiledental: {
+    category: 'clinics',
+    name: 'Smile Dental',
+    address: '14 Market St, San Francisco, CA 94103',
+    phone: '(415) 555-7123',
+    hours: '9:00 AM - 6:00 PM',
+    bannerUrl: 'https://placehold.co/1200x200/22c55e/ffffff?text=Smile+Dental',
+    services: [
+      { _id: 'd1', name: 'Dental Checkup', description: 'Routine dental exam and x-rays.', duration: 40, price: 120 },
+      { _id: 'd2', name: 'Teeth Whitening', description: 'Professional whitening treatment.', duration: 60, price: 200 },
+      { _id: 'd3', name: 'Cavity Filling', description: 'Composite filling for cavities.', duration: 45, price: 150 },
+    ],
+  },
+  urbancuts: {
+    category: 'salons',
+    name: 'Urban Cuts',
+    address: '210 Mission St, San Francisco, CA 94105',
+    phone: '(415) 555-1100',
+    hours: '10:00 AM - 7:00 PM',
+    bannerUrl: 'https://placehold.co/1200x200/60a5fa/ffffff?text=Urban+Cuts',
+    services: [
+      { _id: 'u1', name: "Men's Haircut", description: 'Classic and modern styles.', duration: 30, price: 40 },
+      { _id: 'u2', name: 'Beard Trim', description: 'Precision beard grooming.', duration: 20, price: 25 },
+      { _id: 'u3', name: 'Kids Haircut', description: 'Gentle and friendly cuts for kids.', duration: 25, price: 30 },
+    ],
+  },
+  blissbeauty: {
+    category: 'salons',
+    name: 'Bliss Beauty',
+    address: '500 Lakeshore Dr, Chicago, IL 60601',
+    phone: '(312) 555-2222',
+    hours: '9:00 AM - 5:30 PM',
+    bannerUrl: 'https://placehold.co/1200x200/93c5fd/ffffff?text=Bliss+Beauty',
+    services: [
+      { _id: 'b1', name: 'Facial Therapy', description: 'Rejuvenating skin treatment.', duration: 50, price: 95 },
+      { _id: 'b2', name: 'Aromatherapy Massage', description: 'Relaxing full-body massage.', duration: 60, price: 120 },
+      { _id: 'b3', name: 'Brow Shaping', description: 'Precision brow styling.', duration: 20, price: 25 },
+    ],
+  },
+  pulsehealth: {
+    category: 'clinics',
+    name: 'Pulse Health',
+    address: '88 River Rd, Chicago, IL 60607',
+    phone: '(312) 555-6677',
+    hours: '7:30 AM - 4:30 PM',
+    bannerUrl: 'https://placehold.co/1200x200/86efac/111111?text=Pulse+Health',
+    services: [
+      { _id: 'p1', name: 'Cardio Screening', description: 'ECG and blood pressure assessment.', duration: 30, price: 85 },
+      { _id: 'p2', name: 'Nutrition Consult', description: 'Dietary planning session.', duration: 45, price: 100 },
+      { _id: 'p3', name: 'Physio Session', description: 'Physiotherapy for recovery.', duration: 60, price: 130 },
+    ],
+  },
 };
-
-const MOCK_SERVICES = [
-  {
-    _id: '1',
-    name: "Women's Haircut & Style",
-    description: 'A full cut, wash, and professional styling.',
-    duration: 45,
-    price: 65,
-  },
-  {
-    _id: '2',
-    name: 'Manicure & Pedicure Combo',
-    description: 'Relaxing hand and foot treatment with your choice of polish.',
-    duration: 60,
-    price: 80,
-  },
-  {
-    _id: '3',
-    name: '60-Minute Deep Tissue Massage',
-    description: 'Targeted massage to relieve chronic muscle tension.',
-    duration: 60,
-    price: 110,
-  },
-];
 // --- End Mock Data ---
 
 export default function BusinessBookingPage() {
@@ -52,23 +101,40 @@ export default function BusinessBookingPage() {
   // Fetch business and service data when the slug is available
   useEffect(() => {
     if (businessSlug) {
-      // --- Real Fetching (would look like this) ---
-      // const fetchBusinessData = async () => {
-      //   try {
-      //     // This is the new public endpoint we'd need to create:
-      //     const res = await fetch(`/api/public/business/${businessSlug}`);
-      //     const data = await res.json();
-      //     setBusiness(data.business);
-      //     setServices(data.services);
-      //   } catch (error) {
-      //     console.error("Failed to fetch business data", error);
-      //   }
-      // };
-      // fetchBusinessData();
+      const demo = DEMO_BUSINESSES[String(businessSlug).toLowerCase()];
+      if (demo) {
+        // Choose category-specific photo banner
+        const cat = String(demo.category || '').toLowerCase();
+        const bannerPhoto =
+          cat === 'salons'
+            ? 'https://mir-s3-cdn-cf.behance.net/project_modules/1400/d34a4864987187.5ae48c9c9aa47.jpg'
+            : cat === 'clinics'
+            ? 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?q=80&w=1600&auto=format&fit=crop'
+            : cat === 'consultants'
+            ? 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1600&auto=format&fit=crop'
+            : cat === 'tutors'
+            ? 'https://images.unsplash.com/photo-1513258496099-48168024aec0?q=80&w=1600&auto=format&fit=crop'
+            : demo.bannerUrl;
 
-      // --- Using Mock Data (for now) ---
-      setBusiness(MOCK_BUSINESS_DATA);
-      setServices(MOCK_SERVICES);
+        setBusiness({
+          name: demo.name,
+          address: demo.address,
+          phone: demo.phone,
+          hours: demo.hours,
+          bannerUrl: bannerPhoto,
+        });
+        setServices(demo.services);
+      } else {
+        // Fallback to a simple placeholder
+        setBusiness({
+          name: 'Demo Business',
+          address: '123 Demo St',
+          phone: '(000) 000-0000',
+          hours: '9:00 AM - 5:00 PM',
+          bannerUrl: 'https://placehold.co/1200x200/cccccc/111111?text=Demo+Business',
+        });
+        setServices([]);
+      }
     }
   }, [businessSlug]);
 

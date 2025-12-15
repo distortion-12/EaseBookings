@@ -19,8 +19,7 @@ export default function HomePage() {
   const [area, setArea] = useState('');
 
   const handleCategoryClick = (categorySlug) => {
-    console.log(`Navigating to category: ${categorySlug}`);
-    router.push('/glowupsalon');
+    router.push(`/category/${categorySlug}`);
   };
 
   const openClientAuthModal = () => {
@@ -31,8 +30,10 @@ export default function HomePage() {
   // --- SEARCH HANDLER ---
   const handleSearch = (e) => {
     e.preventDefault();
-    toast.success(`Searching for "${area}" in "${city}"...`);
-    console.log('Search params:', { city, area });
+    const qCity = city.trim();
+    const qArea = area.trim();
+    toast.success(`Searching for "${qArea}" in "${qCity}"...`);
+    router.push(`/category/salons?city=${encodeURIComponent(qCity)}&q=${encodeURIComponent(qArea)}`);
   };
 
   return (
