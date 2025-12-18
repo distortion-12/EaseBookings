@@ -64,8 +64,8 @@ git clone https://github.com/distortion-12/EaseBookings.git
 cd EaseBookings
 
 # Install dependencies
-cd server && npm install && cd ..
-cd client && npm install && cd ..
+cd server && npm install
+cd client && npm install
 ```
 
 ### 2️⃣ Configure Environment Variables
